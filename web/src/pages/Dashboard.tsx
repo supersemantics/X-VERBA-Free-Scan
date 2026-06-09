@@ -28,6 +28,9 @@ export default function Dashboard() {
     medium: result.ungoverned_nodes.filter(n => n.severity === 'medium').length,
   };
 
+  const noAi = result.gamma_status === 'NO_AI_INTEGRATIONS';
+  const noFindings = !noAi && result.ungoverned_nodes.length === 0;
+
   return (
     <div>
       {/* Header */}
@@ -43,17 +46,54 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Gamma Score */}
-      <div className="mb-8">
-        <h2 className="text-xs uppercase tracking-wider text-verba-muted mb-3 font-medium">
-          Governance Score
-        </h2>
-        <GammaGauge value={result.gamma} size="lg" />
-      </div>
+      {/* No AI integrations banner */}
+      {noAi && (
+        <div className="mb-8 bg-verba-surface border border-verba-border rounded-2xl p-8 text-center">
+          <div className="text-4xl mb-4">&#x1F50D;</div>
+          <h2 className="text-lg font-semibold text-white mb-2">No AI Integrations Detected</h2>
+          <p className="text-sm text-verba-muted max-w-md mx-auto mb-4">
+            X-Verba scanned <strong className="text-white">{result.files_scanned} files</strong> in <strong className="text-white">{result.repo_name}</strong> and
+            found no AI SDK calls (OpenAI, Anthropic, LangChain, etc.).
+          </p>
+          <p className="text-xs text-verba-muted max-w-md mx-auto mb-6">
+            Governance analysis applies to code that makes AI API calls, chains AI outputs, or triggers
+            irreversible actions from AI decisions. This repository does not appear to contain those patterns.
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-verba-accent hover:bg-verba-accent/90 text-white px-6 py-2.5 rounded-lg transition-all text-sm font-medium"
+          >
+            Scan Another Repo
+          </button>
+        </div>
+      )}
 
-      <div className="h-px bg-verba-border my-8" />
+      {/* Clean bill banner */}
+      {noFindings && (
+        <div className="mb-8 bg-verba-surface border border-verba-green/30 rounded-2xl p-8 text-center">
+          <div className="text-4xl mb-4">&#x2705;</div>
+          <h2 className="text-lg font-semibold text-white mb-2">All Decision Points Governed</h2>
+          <p className="text-sm text-verba-muted max-w-md mx-auto">
+            X-Verba found AI integrations in this repo and every decision point has a governance check.
+            Structural Gamma: <strong className="text-verba-green">{result.gamma}</strong>.
+          </p>
+        </div>
+      )}
+
+      {/* Gamma Score — show only when there's something to score */}
+      {!noAi && (
+        <div className="mb-8">
+          <h2 className="text-xs uppercase tracking-wider text-verba-muted mb-3 font-medium">
+            Governance Score
+          </h2>
+          <GammaGauge value={result.gamma} size="lg" />
+        </div>
+      )}
+
+      {!noAi && <div className="h-px bg-verba-border my-8" />}
 
       {/* Findings Summary */}
+      {result.ungoverned_nodes.length > 0 && (
       <div className="mb-8">
         <h2 className="text-xs uppercase tracking-wider text-verba-muted mb-4 font-medium">
           Findings
@@ -111,10 +151,12 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      )}
 
-      <div className="h-px bg-verba-border my-8" />
+      {result.ungoverned_nodes.length > 0 && <div className="h-px bg-verba-border my-8" />}
 
       {/* Actions */}
+      {!noAi && (
       <div>
         <h2 className="text-xs uppercase tracking-wider text-verba-muted mb-4 font-medium">
           Actions
@@ -140,6 +182,7 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }
