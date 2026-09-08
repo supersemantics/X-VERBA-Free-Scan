@@ -1,17 +1,42 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GammaGauge from '../components/GammaGauge';
+import { getRecentScans } from '../lib/recentScans';
+import { registerScan } from '../api/client';
+import { FEATURED_SCANS } from '../data/featuredScans';
+import { useSpotlight } from '../hooks/useSpotlight';
 
-// Demo recent scans (in production, fetched from API)
-const recentScans = [
-  { repo: 'anthropic-sdk', timeAgo: '2h ago', gamma: 0.35 },
-  { repo: 'langgraph', timeAgo: '1d ago', gamma: 0.12 },
-];
+function timeAgo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const hours = Math.floor(ms / 3_600_000);
+  if (hours < 1) return 'just now';
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
 
 export default function Landing() {
   const [repoUrl, setRepoUrl] = useState('');
   const [error, setError] = useState('');
+  const [openingFeatured, setOpeningFeatured] = useState<string | null>(null);
   const navigate = useNavigate();
+  const recentScans = getRecentScans();
+  const spotlight = useSpotlight();
+
+  const openFeatured = async (slug: string) => {
+    const featured = FEATURED_SCANS.find((f) => f.slug === slug);
+    if (!featured) return;
+    setOpeningFeatured(slug);
+    try {
+      await registerScan(featured.result);
+      navigate(`/results/${featured.result.scan_id}`, { state: { result: featured.result } });
+    } catch {
+      // Registration failed (API unreachable) — still show the cached result;
+      // export/history just won't be able to reach the backend for it.
+      navigate(`/results/${featured.result.scan_id}`, { state: { result: featured.result } });
+    } finally {
+      setOpeningFeatured(null);
+    }
+  };
 
   const handleScan = () => {
     const trimmed = repoUrl.trim();
@@ -32,24 +57,60 @@ export default function Landing() {
     <div className="flex flex-col items-center justify-center min-h-[70vh]">
       {/* Hero */}
       <div className="text-center mb-12">
-        <h1 className="text-5xl font-bold mb-3 tracking-tight">
-          <span className="text-white">X-VERBA</span>
+        <h1 className="font-display text-6xl font-bold mb-3 tracking-tight">
+          <span className="bg-gradient-to-r from-white via-white to-verba-accent bg-clip-text text-transparent">
+            X-VERBA
+          </span>
         </h1>
-        <p className="text-xl text-verba-muted">
-          Governance Scanner
+        <p className="font-display text-xl font-medium text-verba-muted tracking-tight">
+          Agent Governance Scanner
         </p>
         <p className="text-sm text-verba-muted mt-2 max-w-md mx-auto">
-          Find the governance gaps in your AI code before your users do.
+          Find governance gaps in your AI agents before they act.
           <br />
           Scan &rarr; See Problem &rarr; Export Solution.
         </p>
       </div>
 
+      {/* Featured scans — real, pre-computed results on real public agent apps */}
+      <div className="w-full max-w-3xl mb-10">
+        <h3 className="text-sm text-verba-muted mb-3 text-center">See it on real AI agents</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {FEATURED_SCANS.map(({ slug, blurb, result }) => (
+            <button
+              key={slug}
+              onClick={() => openFeatured(slug)}
+              onMouseMove={spotlight.onMouseMove}
+              disabled={openingFeatured !== null}
+              className={`text-left bg-verba-surface border border-verba-border hover:border-verba-accent rounded-xl p-4 transition-all hover:-translate-y-0.5 disabled:opacity-60 disabled:hover:translate-y-0 ${spotlight.className}`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-white">{result.repo_name}</span>
+                <GammaGauge value={result.gamma} size="sm" />
+              </div>
+              <p className="text-xs text-verba-muted mb-3">{blurb}</p>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="bg-verba-red/20 text-verba-red px-2 py-0.5 rounded-full">
+                  {result.severity_breakdown.critical} critical
+                </span>
+                <span className="text-verba-muted">{result.files_scanned} files scanned</span>
+              </div>
+              {openingFeatured === slug && (
+                <p className="text-xs text-verba-accent mt-2">Loading&hellip;</p>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Scan Input */}
       <div className="w-full max-w-lg">
-        <div className="bg-verba-surface border border-verba-border rounded-2xl p-6">
+        <div
+          onMouseMove={spotlight.onMouseMove}
+          className={`bg-verba-surface border border-verba-border rounded-2xl p-6 ${spotlight.className}`}
+        >
           <label className="block text-sm text-verba-muted mb-2">
-            Paste GitHub URL
+            Or paste your own GitHub URL
           </label>
           <input
             type="url"
@@ -64,7 +125,7 @@ export default function Landing() {
           )}
           <button
             onClick={handleScan}
-            className="w-full mt-4 bg-verba-accent hover:bg-verba-accent/90 text-white font-medium py-3 rounded-lg transition-all hover:shadow-lg hover:shadow-verba-accent/20"
+            className="w-full mt-4 bg-verba-accent hover:bg-verba-accent/90 text-verba-bg font-semibold py-3 rounded-lg transition-all hover:shadow-lg hover:shadow-verba-accent/20"
           >
             Scan
           </button>
@@ -82,27 +143,29 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* Recent Scans */}
-      <div className="w-full max-w-lg mt-8">
-        <div className="border-t border-verba-border pt-6">
-          <h3 className="text-sm text-verba-muted mb-3">Recent scans</h3>
-          <div className="space-y-2">
-            {recentScans.map((scan) => (
-              <button
-                key={scan.repo}
-                onClick={() => setRepoUrl(`https://github.com/org/${scan.repo}`)}
-                className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-verba-surface border border-transparent hover:border-verba-border transition-all text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-white">{scan.repo}</span>
-                  <span className="text-xs text-verba-muted">({scan.timeAgo})</span>
-                </div>
-                <GammaGauge value={scan.gamma} size="sm" />
-              </button>
-            ))}
+      {/* Your recent scans — real, from this browser's own history only */}
+      {recentScans.length > 0 && (
+        <div className="w-full max-w-lg mt-8">
+          <div className="border-t border-verba-border pt-6">
+            <h3 className="text-sm text-verba-muted mb-3">Your recent scans</h3>
+            <div className="space-y-2">
+              {recentScans.map((scan) => (
+                <button
+                  key={scan.repoUrl}
+                  onClick={() => setRepoUrl(scan.repoUrl)}
+                  className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-verba-surface border border-transparent hover:border-verba-border transition-all text-left"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-white">{scan.repoName}</span>
+                    <span className="text-xs text-verba-muted">({timeAgo(scan.scannedAt)})</span>
+                  </div>
+                  <GammaGauge value={scan.gamma} size="sm" />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

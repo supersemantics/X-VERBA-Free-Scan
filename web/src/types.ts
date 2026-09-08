@@ -10,27 +10,39 @@ export interface UngovernedNode {
   recommendation: string;
   issue: string;
   provider: string;
+  confidence: 'high' | 'medium';
 }
 
 export interface DriftClassSummary {
   [code: string]: number;
 }
 
+export interface SeverityBreakdown {
+  critical: number;
+  high: number;
+  medium: number;
+}
+
+export type ExportFormat = 'yaml' | 'json' | 'txt' | 'md';
+
 export interface ScanResult {
   scan_id: string;
   repo: string;
   repo_name: string;
   gamma: number;
-  gamma_status: 'BELOW_THRESHOLD' | 'PARTIAL_COVERAGE' | 'ABOVE_THRESHOLD';
+  gamma_status: 'BELOW_THRESHOLD' | 'PARTIAL_COVERAGE' | 'ABOVE_THRESHOLD' | 'NO_AI_INTEGRATIONS';
   files_scanned: number;
   files_affected: number;
   ungoverned_nodes: UngovernedNode[];
   drift_class_summary: DriftClassSummary;
+  severity_breakdown: SeverityBreakdown;
+  frameworks_detected: string[];
   contract_size_kb: number;
   test_cases_count: number;
   pre_nodes_count: number;
   stabilisation_operators_count: number;
   scan_date: string;
+  scan_duration_ms: number;
 }
 
 export interface ScanHistoryEntry {

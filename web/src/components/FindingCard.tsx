@@ -1,4 +1,17 @@
+import type { ReactNode } from 'react';
 import type { UngovernedNode } from '../types';
+import GlossaryTerm from './GlossaryTerm';
+import { useSpotlight } from '../hooks/useSpotlight';
+
+// Wraps every literal occurrence of "Pre-Node" in a GlossaryTerm — the
+// recommendation/issue strings are plain hardcoded text from the API, so
+// this is a fixed-literal split rather than general jargon auto-detection.
+function linkifyPreNode(text: string): ReactNode {
+  const parts = text.split(/(Pre-Node)/g);
+  return parts.map((part, i) =>
+    part === 'Pre-Node' ? <GlossaryTerm key={i} id="PRE_NODE">{part}</GlossaryTerm> : part,
+  );
+}
 
 const severityStyles = {
   critical: {
@@ -23,9 +36,13 @@ const severityStyles = {
 
 export default function FindingCard({ node, index }: { node: UngovernedNode; index: number }) {
   const style = severityStyles[node.severity];
+  const spotlight = useSpotlight();
 
   return (
-    <div className={`rounded-xl border ${style.border} ${style.bg} p-5 transition-all hover:border-opacity-60`}>
+    <div
+      onMouseMove={spotlight.onMouseMove}
+      className={`rounded-xl border ${style.border} ${style.bg} p-5 transition-all hover:border-opacity-60 ${spotlight.className}`}
+    >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-verba-muted text-xs font-mono">Finding {index + 1}</span>
@@ -38,9 +55,18 @@ export default function FindingCard({ node, index }: { node: UngovernedNode; ind
         </span>
       </div>
 
+      <div className="mb-3 text-xs text-verba-muted">
+        Detection confidence:{' '}
+        <GlossaryTerm id={node.confidence === 'high' ? 'CONFIDENCE_HIGH' : 'CONFIDENCE_MEDIUM'}>
+          {node.confidence === 'high' ? 'high (SDK match)' : 'medium (pattern match)'}
+        </GlossaryTerm>
+      </div>
+
       <div className="mb-3">
         <div className="flex items-center gap-2 mb-1">
-          <span className="font-mono text-sm text-verba-accent">{node.drift_class}</span>
+          <GlossaryTerm id={node.drift_class}>
+            <span className="font-mono text-sm text-verba-accent">{node.drift_class}</span>
+          </GlossaryTerm>
           <span className="text-sm text-white">{node.drift_class_name}</span>
         </div>
       </div>
@@ -61,12 +87,12 @@ export default function FindingCard({ node, index }: { node: UngovernedNode; ind
 
       <div className="mb-3">
         <div className="text-xs text-verba-muted mb-1">Issue</div>
-        <p className="text-sm text-gray-300">{node.issue}</p>
+        <p className="text-sm text-gray-300">{linkifyPreNode(node.issue)}</p>
       </div>
 
       <div>
         <div className="text-xs text-verba-muted mb-1">Recommendation</div>
-        <p className="text-sm text-verba-green/80">{node.recommendation}</p>
+        <p className="text-sm text-verba-green/80">{linkifyPreNode(node.recommendation)}</p>
       </div>
     </div>
   );

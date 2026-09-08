@@ -7,7 +7,7 @@ const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 
 // ── POST /api/scan ───────────────────────────────────────────────────────────
 app.post('/api/scan', async (req, res) => {
@@ -35,7 +35,22 @@ app.post('/api/scan', async (req, res) => {
   }
 });
 
-// ── GET /api/contract/:scan_id ───────────────────────────────────────────────
+// ── POST /api/scan/register ──────────────────────────────────────────────────
+// Seeds the in-memory store with a scan result computed elsewhere (currently
+// only used for the home page's pre-computed "featured" scans, so their
+// contract export/history still work through the normal endpoints instead of
+// needing a separate code path).
+app.post('/api/scan/register', (req, res) => {
+  const result = req.body;
+  if (!result || typeof result.scan_id !== 'string' || typeof result.repo_name !== 'string') {
+    res.status(400).json({ error: 'A valid ScanResult body is required' });
+    return;
+  }
+  saveScan(result);
+  res.json({ status: 'ok' });
+});
+
+// ── GET /api/contract/:scan_id?format=yaml|json|txt|md ───────────────────────
 app.get('/api/contract/:scan_id', (req, res) => {
   const scan = getScan(req.params.scan_id);
   if (!scan) {
@@ -43,9 +58,24 @@ app.get('/api/contract/:scan_id', (req, res) => {
     return;
   }
 
-  // Generate a governance.yaml contract from scan results
-  const yaml = generateContractYaml(scan);
-  res.type('text/yaml').send(yaml);
+  const format = typeof req.query.format === 'string' ? req.query.format.toLowerCase() : 'yaml';
+
+  switch (format) {
+    case 'json':
+      res.type('application/json').send(generateContractJson(scan));
+      return;
+    case 'txt':
+      res.type('text/plain').send(generateContractTxt(scan));
+      return;
+    case 'md':
+      res.type('text/markdown').send(generateContractMd(scan));
+      return;
+    case 'yaml':
+      res.type('text/yaml').send(generateContractYaml(scan));
+      return;
+    default:
+      res.status(400).json({ error: `Unknown format '${format}'. Use yaml, json, txt, or md.` });
+  }
 });
 
 // ── GET /api/scans/:repo ─────────────────────────────────────────────────────
@@ -119,6 +149,118 @@ function generateContractYaml(scan: ReturnType<typeof getScan>): string {
   for (const [code, count] of Object.entries(scan.drift_class_summary)) {
     lines.push(`  ${code}: ${count}`);
   }
+
+  return lines.join('\n');
+}
+
+// ── JSON contract generator ──────────────────────────────────────────────────
+// Same underlying data as the YAML contract, structured for CI/tooling
+// consumption rather than human editing.
+
+function generateContractJson(scan: ReturnType<typeof getScan>): string {
+  if (!scan) return JSON.stringify({ error: 'No scan data' });
+
+  return JSON.stringify(
+    {
+      system_identity: {
+        identity_key: scan.scan_id,
+        system_name: scan.repo_name,
+        scan_date: scan.scan_date,
+        verba_version: '0.2.0',
+        reviewed: false,
+        approved: false,
+      },
+      governance_score: {
+        structural_gamma: scan.gamma,
+        status: scan.gamma_status,
+        total_ungoverned_nodes: scan.ungoverned_nodes.length,
+        files_affected: scan.files_affected,
+      },
+      severity_breakdown: scan.severity_breakdown,
+      frameworks_detected: scan.frameworks_detected,
+      nodes: scan.ungoverned_nodes.map((node) => ({
+        id: `${node.drift_class}-${node.line}`,
+        location: `${node.file}:${node.line}`,
+        drift_class: node.drift_class,
+        severity: node.severity,
+        confidence: node.confidence,
+        issue: node.issue,
+        recommendation: node.recommendation,
+        pre_node: {
+          conditions_for_execution: null,
+          conditions_to_block: null,
+          fallback: null,
+        },
+      })),
+      drift_classes: scan.drift_class_summary,
+    },
+    null,
+    2,
+  );
+}
+
+// ── Plain-text contract generator ────────────────────────────────────────────
+// Closest to what a terminal scan report looks like — for CI logs or piping
+// into other tools, not for editing.
+
+function generateContractTxt(scan: ReturnType<typeof getScan>): string {
+  if (!scan) return 'No scan data';
+
+  const lines: string[] = [
+    'X-VERBA GOVERNANCE REPORT',
+    `Repo: ${scan.repo_name}`,
+    `Scanned: ${scan.scan_date}`,
+    '',
+    `Gamma: ${scan.gamma} (${scan.gamma_status})`,
+    `Files scanned: ${scan.files_scanned}  Files affected: ${scan.files_affected}`,
+    `Severity: critical=${scan.severity_breakdown.critical || 0} high=${scan.severity_breakdown.high || 0} medium=${scan.severity_breakdown.medium || 0}`,
+    '',
+    'FINDINGS',
+    '--------',
+  ];
+
+  for (const node of scan.ungoverned_nodes) {
+    lines.push(`[${node.severity.toUpperCase()}] ${node.drift_class} ${node.file}:${node.line}`);
+    lines.push(`  ${node.code}`);
+    lines.push(`  Issue: ${node.issue}`);
+    lines.push(`  Fix: ${node.recommendation}`);
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
+// ── Markdown report generator ────────────────────────────────────────────────
+// The shareable format — meant to be pasted into Slack/email or attached to
+// a follow-up, not compiled into anything.
+
+function generateContractMd(scan: ReturnType<typeof getScan>): string {
+  if (!scan) return '# No scan data';
+
+  const lines: string[] = [
+    `# X-VERBA governance report: ${scan.repo_name}`,
+    '',
+    `Scanned ${scan.files_scanned} files on ${new Date(scan.scan_date).toLocaleDateString()}.`,
+    '',
+    `**Gamma score: ${scan.gamma}** (${scan.gamma_status})`,
+    '',
+    `- Files affected: ${scan.files_affected}`,
+    `- Critical findings: ${scan.severity_breakdown.critical || 0}`,
+    `- High findings: ${scan.severity_breakdown.high || 0}`,
+    `- Medium findings: ${scan.severity_breakdown.medium || 0}`,
+  ];
+
+  if (scan.frameworks_detected.length > 0) {
+    lines.push(`- Frameworks detected: ${scan.frameworks_detected.join(', ')}`);
+  }
+
+  lines.push('', '## Findings', '', '| Severity | Drift class | Location | Issue |', '|---|---|---|---|');
+
+  for (const node of scan.ungoverned_nodes) {
+    lines.push(`| ${node.severity} | ${node.drift_class} | \`${node.file}:${node.line}\` | ${node.issue} |`);
+  }
+
+  lines.push('', '---', '_Generated by X-VERBA Scan — Super Semantics_');
 
   return lines.join('\n');
 }

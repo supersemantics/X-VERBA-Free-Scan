@@ -25,9 +25,9 @@ export default function TrendChart({ entries }: TrendChartProps) {
   const areaD = pathD + ` L ${points[points.length - 1].x} ${padding.top + plotH} L ${points[0].x} ${padding.top + plotH} Z`;
 
   const getColor = (v: number) => {
-    if (v >= 0.9) return '#22c55e';
-    if (v >= 0.5) return '#f59e0b';
-    return '#ef4444';
+    if (v >= 0.9) return '#67AA38'; // verba.green — brand accent, reused for "governed"
+    if (v >= 0.5) return '#F59E0B'; // verba.amber
+    return '#F43F5E'; // verba.red
   };
 
   const currentGamma = sorted[sorted.length - 1]?.gamma ?? 0;
@@ -61,8 +61,8 @@ export default function TrendChart({ entries }: TrendChartProps) {
           const y = padding.top + plotH - (v / maxGamma) * plotH;
           return (
             <g key={v}>
-              <line x1={padding.left} y1={y} x2={chartWidth - padding.right} y2={y} stroke="#1e1e2e" strokeWidth={1} />
-              <text x={padding.left - 6} y={y + 4} textAnchor="end" fill="#6b7280" fontSize={10} fontFamily="monospace">
+              <line x1={padding.left} y1={y} x2={chartWidth - padding.right} y2={y} stroke="#333333" strokeWidth={1} />
+              <text x={padding.left - 6} y={y + 4} textAnchor="end" fill="#9A9A9A" fontSize={10} fontFamily="monospace">
                 {v.toFixed(1)}
               </text>
             </g>
@@ -75,7 +75,7 @@ export default function TrendChart({ entries }: TrendChartProps) {
           y1={padding.top + plotH - (0.9 / maxGamma) * plotH}
           x2={chartWidth - padding.right}
           y2={padding.top + plotH - (0.9 / maxGamma) * plotH}
-          stroke="#22c55e"
+          stroke="#67AA38"
           strokeWidth={1}
           strokeDasharray="4 4"
           opacity={0.4}
@@ -91,9 +91,9 @@ export default function TrendChart({ entries }: TrendChartProps) {
         {points.map((p, i) => (
           <g key={i}>
             <circle cx={p.x} cy={p.y} r={4} fill={getColor(p.gamma)} />
-            <circle cx={p.x} cy={p.y} r={2} fill="#0a0a0f" />
+            <circle cx={p.x} cy={p.y} r={2} fill="#1A1A1A" />
             {/* Date label */}
-            <text x={p.x} y={chartHeight - 5} textAnchor="middle" fill="#6b7280" fontSize={9} fontFamily="monospace">
+            <text x={p.x} y={chartHeight - 5} textAnchor="middle" fill="#9A9A9A" fontSize={9} fontFamily="monospace">
               {new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </text>
           </g>

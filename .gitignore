@@ -43,3 +43,7 @@ coverage/
 
 # Vite
 *.local
+*.tsbuildinfo
+
+# Local Claude Code / editor launch config
+.claude/

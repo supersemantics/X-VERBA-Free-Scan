@@ -5,12 +5,127 @@
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   min-height: 100vh;
+  /* Base dark, from the Sep 2026 rebrand (Background token, doc + live site).
+     The animated aurora blobs, grid texture, and cursor glow (all rendered
+     by <AmbientBackground>) sit behind everything and do the work the old
+     static two-gradient background used to do, plus motion. */
+  background: #1A1A1A;
+}
+
+/* ── Ambient background (AmbientBackground.tsx) ────────────────────────── */
+
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ambient-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.55;
+  will-change: transform;
+}
+
+@keyframes drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(6vw, 4vh) scale(1.1); }
+  66%      { transform: translate(-4vw, 6vh) scale(0.95); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-8vw, -5vh) scale(1.15); }
+}
+@keyframes drift-c {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%      { transform: translate(5vw, -6vh) scale(1.05); }
+  75%      { transform: translate(-6vw, -2vh) scale(0.9); }
+}
+
+/* Rebrand: monochrome blobs (subtle depth, no color) with the brand green
+   reserved for exactly one blob + the cursor glow — echoes how the live
+   site itself uses green sparingly (a single accent dot), not as an
+   ambient wash. */
+.ambient-blob-1 {
+  top: -10%; right: -5%; width: 45vw; height: 45vw;
+  background: radial-gradient(circle, #2A2A2A 0%, transparent 70%);
+  animation: drift-a 26s ease-in-out infinite;
+}
+.ambient-blob-2 {
+  bottom: -15%; left: -10%; width: 50vw; height: 50vw;
+  background: radial-gradient(circle, #202020 0%, transparent 70%);
+  animation: drift-b 32s ease-in-out infinite;
+}
+.ambient-blob-3 {
+  top: 35%; left: 45%; width: 35vw; height: 35vw;
+  background: radial-gradient(circle, rgba(103,170,56,0.12) 0%, transparent 70%);
+  animation: drift-c 22s ease-in-out infinite;
+}
+
+/* Faint technical grid, fading out toward the edges so it reads as texture
+   rather than a hard pattern — neutral white, not tinted, matching the
+   brand's flat black/white restraint. */
+.ambient-grid {
+  position: absolute;
+  inset: -1px;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 40%, transparent 90%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 40%, transparent 90%);
+}
+
+/* Soft glow that follows the real cursor position, updated via
+   --cursor-x/--cursor-y on <html> (see useCursorGlow). Screen-blended so it
+   only ever brightens, never muddies, the aurora underneath. Brand green —
+   the one spot of color in an otherwise monochrome ambient system. */
+.ambient-cursor-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    600px circle at var(--cursor-x, 50%) var(--cursor-y, 50%),
+    rgba(103, 170, 56, 0.10),
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+  transition: opacity 0.4s ease;
+  opacity: var(--cursor-glow-opacity, 0);
+}
+
+/* ── Spotlight-card: a hover highlight that tracks the cursor within the
+   card, not just a flat hover state. Pair with useSpotlight() in a
+   component, which sets --mx/--my per pointer move. ────────────────────── */
+.spotlight-card {
+  position: relative;
+  isolation: isolate;
+}
+.spotlight-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: radial-gradient(
+    280px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(103, 170, 56, 0.16),
+    transparent 65%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+.spotlight-card:hover::before {
+  opacity: 1;
 }
 
 @layer base {
   :root {
-    --color-verba-bg: 10 10 15;
-    --color-verba-surface: 18 18 26;
+    --color-verba-bg: 26 26 26;      /* #1A1A1A — doc Background token */
+    --color-verba-surface: 36 36 36; /* #242424 — derived card-depth step */
   }
 }
 
@@ -19,14 +134,14 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0a0f;
+  background: #1A1A1A;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2e2e3e;
+  background: #333333;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3e3e4e;
+  background: #67AA38;
 }
 
 /* Gamma gauge animation */
@@ -54,4 +169,19 @@ body {
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
   animation: progress-shine 1.5s ease-in-out infinite;
+}
+
+/* Print (Glossary "Export PDF" uses window.print()) — the whole app is
+   light-on-dark, which prints as invisible or ink-heavy without an override.
+   Force a plain white/black document; Docs.tsx's own print: classes handle
+   layout specifics (expanding every entry, hiding interactive chrome). */
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+  * {
+    color: #000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
 }

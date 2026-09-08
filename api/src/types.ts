@@ -14,6 +14,7 @@ export interface UngovernedNode {
   recommendation: string;
   issue: string;
   provider: string;
+  confidence: 'high' | 'medium';
 }
 
 export interface ScanResult {
@@ -26,11 +27,14 @@ export interface ScanResult {
   files_affected: number;
   ungoverned_nodes: UngovernedNode[];
   drift_class_summary: Record<string, number>;
+  severity_breakdown: Record<string, number>;
+  frameworks_detected: string[];
   contract_size_kb: number;
   test_cases_count: number;
   pre_nodes_count: number;
   stabilisation_operators_count: number;
   scan_date: string;
+  scan_duration_ms: number;
   contract_yaml?: string;
 }
 

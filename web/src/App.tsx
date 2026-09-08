@@ -2,10 +2,8 @@ import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
 import ScanProgress from './pages/ScanProgress';
-import Dashboard from './pages/Dashboard';
-import DetailedFindings from './pages/DetailedFindings';
-import ExportContract from './pages/ExportContract';
-import ScanHistory from './pages/ScanHistory';
+import Results from './pages/Results';
+import Docs from './pages/Docs';
 
 export default function App() {
   return (
@@ -13,10 +11,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/scanning" element={<ScanProgress />} />
-        <Route path="/results/:scanId" element={<Dashboard />} />
-        <Route path="/findings/:scanId" element={<DetailedFindings />} />
-        <Route path="/export/:scanId" element={<ExportContract />} />
-        <Route path="/history/:repo" element={<ScanHistory />} />
+        <Route path="/results/:scanId" element={<Results />} />
+        <Route path="/docs" element={<Docs />} />
       </Routes>
     </Layout>
   );

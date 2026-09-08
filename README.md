@@ -1,25 +1,61 @@
 ![x-verba](https://img.shields.io/badge/Structural%20Gamma-0.0%20UNGOVERNED-red?style=flat-square)
 
-# X-Verba
+# X-VERBA Free Scan
 
 X-Verba is the first static governance analyser — a tool that finds structural risk in code the way linters find bugs.
 
 Static governance analysis is the discipline of detecting structural governance gaps in code — the boundaries, checks, and rules that determine what a system is allowed to do and what it must never do.
 
-A free CLI that scans any codebase, finds unprotected decision points, and generates a governance contract you can actually use. Works on any repo. No account required. Built by Super Semantics.
-
-**Requirements:** Python 3.9+ or Node.js 18+. Supports `.py`, `.js`, `.ts`, `.jsx`, `.tsx`, `.java`, `.go`, `.rb`, `.cs`. Schema version 1.0.
+**This repo is the Free Scan web app** — the browser-based experience behind [supersemantics.org](https://www.supersemantics.org/) that runs a scan and shows you the results without touching a terminal. The scan engine itself is the [X-verba-CLI](https://github.com/supersemantics/X-verba-CLI) — this app is a thin Express + React wrapper around it, not a separate reimplementation. Works on any public repo. No account required. Built by Super Semantics.
 
 ---
 
-## Install
+## Run the Free Scan web tool locally
+
+A small Express API (in [`api/`](./api)) shells out to the real `x-verba` CLI to scan a cloned repo, and a React/Vite frontend (in [`web/`](./web)) renders the results. Runs entirely on your machine — no account or API key required.
+
+**Requirements:** Node.js 18+, Python 3.9+, and `git` on your `PATH`.
+
+```bash
+# 1. Install the scan engine (the API shells out to this)
+pip install x-verba
+
+# 2. Start the API (from the api/ folder)
+cd api
+npm install
+npm run dev        # → http://localhost:3001
+
+# 3. In a second terminal, start the web app (from the web/ folder)
+cd web
+npm install
+npm run dev         # → http://localhost:5173
+```
+
+Open [http://localhost:5173](http://localhost:5173) — the frontend proxies `/api` requests to the API server automatically (see [`web/vite.config.ts`](./web/vite.config.ts)). Paste a GitHub URL or pick one of the pre-scanned example repos to see a live Gamma (Γ) score and governance report.
+
+If `x-verba` isn't on your `PATH` (e.g. installed into a virtualenv), point the API at it explicitly:
+
+```bash
+X_VERBA_BIN="/path/to/venv/bin/x-verba" npm run dev
+```
+
+**Building for production:**
+
+```bash
+cd api && npm run build && npm start    # compiles to dist/, runs on PORT (default 3001)
+cd web && npm run build                 # outputs static assets to web/dist/
+```
+
+---
+
+## Using the CLI directly
+
+Everything above wraps the CLI for a no-terminal experience, but the CLI stands alone too — same engine, run against your own machine instead of a cloned repo, with no need to run the web app at all.
 
 ```bash
 pip install x-verba        # Python
 npm install -g x-verba     # Node.js
 ```
-
-## Quick start
 
 ```bash
 x-verba scan ./my-repo
@@ -38,6 +74,8 @@ x-verba scan ./my-repo
 → Structural Gamma (Γ): 0.0 / 1.0  ← no governed decision points detected
 → Next step: open .verba/governance.yaml and complete the policy fields
 ```
+
+The CLI's own source lives in [github.com/supersemantics/X-verba-CLI](https://github.com/supersemantics/X-verba-CLI) — the sections below document its behaviour, but for the code itself, that's the canonical repo.
 
 ---
 
@@ -350,11 +388,31 @@ These papers make no product claims. X-Verba makes no research claims. They are 
 
 ## Contributing
 
-X-Verba is open source under the MIT License. Issues, pull requests, and discussions are welcome.
+X-Verba is open source under the MIT License. Issues, pull requests, and discussions are welcome — on whichever repo the change actually belongs to:
 
-The most valuable contribution: point X-Verba at a real-world failure — a documented post-mortem, a CVE, a public incident report — and describe what structural gap the evidence supports. Every real-world mapping strengthens the detection engine and sharpens the tool.
+- **This repo** ([X-VERBA-Free-Scan](https://github.com/supersemantics/X-VERBA-Free-Scan)) — the web app: API wrapper, frontend, UI/UX.
+- **[X-verba-CLI](https://github.com/supersemantics/X-verba-CLI)** — the scan engine itself: detection patterns, drift-class taxonomy, Gamma scoring.
 
-[github.com/4vish/x-verba](https://github.com/4vish/x-verba)
+The most valuable contribution to the engine: point X-Verba at a real-world failure — a documented post-mortem, a CVE, a public incident report — and describe what structural gap the evidence supports. Every real-world mapping strengthens the detection engine and sharpens the tool.
+
+---
+
+## The Super Semantics ecosystem
+
+X-Verba and the Free Scan tool are part of a wider set of open-source governance repos under [github.com/supersemantics](https://github.com/supersemantics):
+
+| Repo | Language | What it is |
+|---|---|---|
+| [X-VERBA-Free-Scan](https://github.com/supersemantics/X-VERBA-Free-Scan) | TypeScript | This repo — the hosted Free Scan web tool (API + frontend) |
+| [X-verba-CLI](https://github.com/supersemantics/X-verba-CLI) | Python | The standalone X-Verba CLI package |
+| [VSL-Core](https://github.com/supersemantics/VSL-Core) | Python | Core governance runtime — contract compilation & enforcement |
+| [VSL-Corejs](https://github.com/supersemantics/VSL-Corejs) | TypeScript | VSL-Core, ported to TypeScript/JS |
+| [VSL-Langgraph](https://github.com/supersemantics/VSL-Langgraph) | Python | LangGraph adapter for VSL governance |
+| [VSL-Langgraphjs](https://github.com/supersemantics/VSL-Langgraphjs) | TypeScript | LangGraph.js adapter for VSL governance |
+| [VSL-LangChain](https://github.com/supersemantics/VSL-LangChain) | Python | LangChain adapter for VSL governance |
+| [VSL-Microsoft-agent-framework](https://github.com/supersemantics/VSL-Microsoft-agent-framework) | Python | Microsoft Agent Framework adapter for VSL governance |
+| [VSL-Core-ledger-client](https://github.com/supersemantics/VSL-Core-ledger-client) | Python | Client for the VERBA Ledger (continuous audit) API |
+| [VSL-Core-ledger-clientjs](https://github.com/supersemantics/VSL-Core-ledger-clientjs) | TypeScript | VSL-Core-ledger-client, ported to TypeScript/JS |
 
 ---
 
@@ -364,7 +422,7 @@ Super Semantics builds governance infrastructure for software systems.
 
 *Governance proven, not claimed.*
 
-[supersemantics.org](https://supersemantics.org)
+[supersemantics.org](https://www.supersemantics.org/) · [github.com/supersemantics](https://github.com/supersemantics)
 
 ---
 

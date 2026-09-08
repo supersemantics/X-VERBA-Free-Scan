@@ -1,3 +1,5 @@
+import GlossaryTerm from './GlossaryTerm';
+
 interface GammaGaugeProps {
   value: number;
   size?: 'sm' | 'lg';
@@ -23,7 +25,7 @@ export default function GammaGauge({ value, size = 'lg' }: GammaGaugeProps) {
             <circle
               cx="70" cy="70" r="60"
               fill="none"
-              stroke="#1e1e2e"
+              stroke="#333333"
               strokeWidth="8"
             />
             <circle
@@ -37,7 +39,9 @@ export default function GammaGauge({ value, size = 'lg' }: GammaGaugeProps) {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xs text-verba-muted font-mono">&Gamma; =</span>
+            <GlossaryTerm id="GAMMA" variant="hover-only">
+              <span className="text-xs text-verba-muted font-mono">&Gamma; =</span>
+            </GlossaryTerm>
             <span className={`text-4xl font-bold font-mono ${color.text}`}>
               {value.toFixed(2)}
             </span>
@@ -52,9 +56,11 @@ export default function GammaGauge({ value, size = 'lg' }: GammaGaugeProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className={`font-mono font-bold ${color.text}`}>
-        &Gamma;={value.toFixed(2)}
-      </span>
+      <GlossaryTerm id="GAMMA" variant="hover-only">
+        <span className={`font-mono font-bold ${color.text}`}>
+          &Gamma;={value.toFixed(2)}
+        </span>
+      </GlossaryTerm>
       <div className={`w-2 h-2 rounded-full ${color.bg} gamma-pulse`} />
     </div>
   );
