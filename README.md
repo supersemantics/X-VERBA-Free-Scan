@@ -1,5 +1,3 @@
-![x-verba](https://img.shields.io/badge/Structural%20Gamma-0.0%20UNGOVERNED-red?style=flat-square)
-
 # X-VERBA Free Scan
 
 X-Verba is the first static governance analyser — a tool that finds structural risk in code the way linters find bugs.
