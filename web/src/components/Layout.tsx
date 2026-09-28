@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import AmbientBackground from './AmbientBackground';
 
+const publicAsset = (name: string) => `${import.meta.env.BASE_URL}${name}`;
+
 export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="relative z-10 min-h-screen flex flex-col">
@@ -26,10 +28,10 @@ export default function Layout({ children }: { children: ReactNode }) {
                 directly on the dark header, where it already has full
                 contrast. */}
             <div className="bg-white rounded-lg p-1 flex items-center justify-center opacity-95 group-hover:opacity-100 transition-opacity">
-              <img src="/x-verba-icon.png" alt="" className="h-9 w-auto" />
+              <img src={publicAsset('x-verba-icon.png')} alt="" className="h-9 w-auto" />
             </div>
             <img
-              src="/x-verba-wordmark.png"
+              src={publicAsset('x-verba-wordmark.png')}
               alt="X-VERBA — powered by Super Semantics"
               className="h-14 w-auto opacity-95 group-hover:opacity-100 transition-opacity"
             />
@@ -66,7 +68,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 own correct backdrop instead of inverting the true brand
                 colors. */}
             <div className="bg-white rounded-lg p-1.5 flex items-center justify-center">
-              <img src="/super-semantics-logo.png" alt="Super Semantics" className="h-6 w-auto" />
+              <img src={publicAsset('super-semantics-logo.png')} alt="Super Semantics" className="h-6 w-auto" />
             </div>
             <span>supersemantics.org</span>
           </a>

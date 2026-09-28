@@ -1,16 +1,26 @@
 import express from 'express';
 import cors from 'cors';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { runScan } from './scanner.js';
 import { saveScan, getScan, getHistory } from './db.js';
 
 const app = express();
+const api = express.Router();
 const PORT = parseInt(process.env.PORT || '3001', 10);
+const webDist = fileURLToPath(new URL('../../web/dist/', import.meta.url));
+const webIndex = join(webDist, 'index.html');
 
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 
+// Keep the scan UI and its API under /scan when hosted alongside the main site.
+app.use('/api', api);
+app.use('/scan/api', api);
+
 // ── POST /api/scan ───────────────────────────────────────────────────────────
-app.post('/api/scan', async (req, res) => {
+api.post('/scan', async (req, res) => {
   const { repo_url } = req.body;
 
   if (!repo_url || typeof repo_url !== 'string') {
@@ -40,7 +50,7 @@ app.post('/api/scan', async (req, res) => {
 // only used for the home page's pre-computed "featured" scans, so their
 // contract export/history still work through the normal endpoints instead of
 // needing a separate code path).
-app.post('/api/scan/register', (req, res) => {
+api.post('/scan/register', (req, res) => {
   const result = req.body;
   if (!result || typeof result.scan_id !== 'string' || typeof result.repo_name !== 'string') {
     res.status(400).json({ error: 'A valid ScanResult body is required' });
@@ -51,7 +61,7 @@ app.post('/api/scan/register', (req, res) => {
 });
 
 // ── GET /api/contract/:scan_id?format=yaml|json|txt|md ───────────────────────
-app.get('/api/contract/:scan_id', (req, res) => {
+api.get('/contract/:scan_id', (req, res) => {
   const scan = getScan(req.params.scan_id);
   if (!scan) {
     res.status(404).json({ error: 'Scan not found' });
@@ -79,18 +89,31 @@ app.get('/api/contract/:scan_id', (req, res) => {
 });
 
 // ── GET /api/scans/:repo ─────────────────────────────────────────────────────
-app.get('/api/scans/:repo', (req, res) => {
+api.get('/scans/:repo', (req, res) => {
   const history = getHistory(decodeURIComponent(req.params.repo));
   res.json(history);
 });
 
 // ── Health check ─────────────────────────────────────────────────────────────
-app.get('/api/health', (_req, res) => {
+api.get('/health', (_req, res) => {
   res.json({ status: 'ok', version: '0.1.0' });
 });
 
-app.listen(PORT, () => {
-  console.log(`X-VERBA API running on http://localhost:${PORT}`);
+if (existsSync(webIndex)) {
+  app.use('/scan', express.static(webDist));
+  app.use('/scan', (req, res, next) => {
+    if (req.method !== 'GET' || /\.[^/]+$/.test(req.path)) {
+      next();
+      return;
+    }
+    res.sendFile(webIndex, (err) => {
+      if (err) next(err);
+    });
+  });
+}
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`X-VERBA API running on port ${PORT}`);
 });
 
 // ── YAML contract generator ──────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 import type { ExportFormat, ScanResult, ScanHistoryEntry } from '../types';
 
-const API_BASE = '/api';
+const API_BASE = `${import.meta.env.BASE_URL}api`.replace(/\/$/, '');
 
 export async function startScan(repoUrl: string): Promise<ScanResult> {
   const res = await fetch(`${API_BASE}/scan`, {
