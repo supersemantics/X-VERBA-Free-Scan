@@ -100,9 +100,16 @@ api.get('/health', (_req, res) => {
 });
 
 if (existsSync(webIndex)) {
-  app.use('/scan', express.static(webDist));
-  app.use('/scan', (req, res, next) => {
-    if (req.method !== 'GET' || /\.[^/]+$/.test(req.path)) {
+  app.use(express.static(webDist));
+  app.use((req, res, next) => {
+    if (
+      req.method !== 'GET' ||
+      req.path === '/api' ||
+      req.path.startsWith('/api/') ||
+      req.path === '/scan/api' ||
+      req.path.startsWith('/scan/api/') ||
+      /\.[^/]+$/.test(req.path)
+    ) {
       next();
       return;
     }

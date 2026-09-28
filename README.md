@@ -48,17 +48,15 @@ cd web && npm run build                 # outputs static assets to web/dist/
 
 The root [`Dockerfile`](./Dockerfile) builds the API and UI together, installs
 the `x-verba` CLI in an isolated Python environment, and serves the app and API
-under `/scan`. Create a Railway service from this repository with the repository
-root as its root directory; Railway will use `railway.toml` and the Dockerfile.
-The health check is available at `/scan/api/health`.
+at the service root. Create a Railway service from this repository with the
+repository root as its root directory; Railway will use `railway.toml` and the
+Dockerfile. The health check is available at `/api/health`.
 
-The frontend is intended to be mounted at `https://your-domain/scan`. Railway
-custom domains route a hostname to a service, not a URL path. If the main
-website already serves `supersemantics.org`, keep its existing domain routing
-and configure that site's reverse proxy to forward `/scan` (including
-`/scan/api`) to the Railway service. Do not attach the same hostname directly
-to this service unless this service is also meant to handle the rest of the
-website.
+The frontend can use its own subdomain, such as `https://scan.supersemantics.org`,
+without taking over the main website. Railway custom domains route a hostname
+to a service, not a URL path; serving this app at `supersemantics.org/scan`
+while keeping an existing website at the root requires a separate reverse
+proxy.
 
 ---
 
