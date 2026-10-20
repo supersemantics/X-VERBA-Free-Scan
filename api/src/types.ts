@@ -17,10 +17,36 @@ export interface UngovernedNode {
   confidence: 'high' | 'medium';
 }
 
+export interface AgentActionCount {
+  governed: number;
+  total: number;
+}
+
+export interface AgentActions {
+  tools: AgentActionCount;
+  model_calls: AgentActionCount;
+  total: AgentActionCount;
+}
+
+export interface VslGate {
+  kind: string;
+  name: string | null;
+  location: string;
+}
+
+export interface VslSummary {
+  detected: boolean;
+  gates_total: number;
+  gates_by_kind: Record<string, number>;
+  gates: VslGate[];
+}
+
 export interface ScanResult {
   scan_id: string;
   repo: string;
   repo_name: string;
+  /** Branch scanned, when the URL named one (…/tree/<branch>). */
+  branch?: string;
   gamma: number;
   gamma_status: string;
   files_scanned: number;
@@ -36,6 +62,10 @@ export interface ScanResult {
   scan_date: string;
   scan_duration_ms: number;
   contract_yaml?: string;
+  /** Tools the agent's model can call, and model calls: governed / total (CLI 0.7.0+). */
+  agent_actions?: AgentActions;
+  /** VSL gates the CLI recognised (CLI 0.7.0+). */
+  vsl?: VslSummary;
 }
 
 export interface ScanHistoryEntry {

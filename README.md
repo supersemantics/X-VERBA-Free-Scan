@@ -31,6 +31,8 @@ npm run dev         # → http://localhost:5173
 
 Open [http://localhost:5173](http://localhost:5173) — the frontend proxies `/api` requests to the API server automatically (see [`web/vite.config.ts`](./web/vite.config.ts)). Paste a GitHub URL or pick one of the pre-scanned example repos to see a live Gamma (Γ) score and governance report.
 
+To scan a branch other than the default, paste the branch's URL as GitHub shows it: `https://github.com/org/repo/tree/<branch>`. With x-verba 0.7.0 or later, the report also shows how many of the agent's actions (tools it can call, model calls) are governed, and any VSL gates recognised.
+
 If `x-verba` isn't on your `PATH` (e.g. installed into a virtualenv), point the API at it explicitly:
 
 ```bash

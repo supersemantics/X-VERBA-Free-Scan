@@ -4,7 +4,8 @@ import { randomUUID } from 'node:crypto';
 import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { ScanResult, UngovernedNode } from './types.js';
+import type { AgentActions, ScanResult, UngovernedNode, VslSummary } from './types.js';
+import { parseRepoUrl } from './repoUrl.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -62,6 +63,12 @@ interface CliLegionMatch {
 
 interface CliScanResult {
   scan_date?: string;
+  vsl?: {
+    detected?: boolean;
+    gates_total?: number;
+    gates_by_kind?: Record<string, number>;
+    gates?: { kind: string; name: string | null; location: string }[];
+  };
   primitives?: {
     ai_integrations?: CliAiIntegration[];
     irreversible_actions?: CliIrreversibleAction[];
@@ -75,6 +82,7 @@ interface CliScanResult {
     decision_points_detected?: number;
     structural_gamma?: number | null;
     governance_status?: string;
+    agent_actions?: AgentActions;
   };
 }
 
@@ -136,13 +144,15 @@ function mapGapToNode(
 export async function runScan(repoUrl: string): Promise<ScanResult> {
   const startedAt = Date.now();
   const scanId = randomUUID();
-  const repoName = extractRepoName(repoUrl);
+  const target = parseRepoUrl(repoUrl);
+  if (!target) throw new Error('Scan failed: invalid GitHub repository URL');
   const tempDir = await mkdtemp(join(tmpdir(), 'xverba-'));
   const reportPath = join(tempDir, '.xverba-report.json');
 
   try {
-    // Clone repo to temp dir
-    await execFileAsync('git', ['clone', '--depth', '1', repoUrl, tempDir], {
+    // Clone the repo (the named branch, if the URL had /tree/<branch>).
+    const branchArgs = target.branch ? ['--branch', target.branch] : [];
+    await execFileAsync('git', ['clone', '--depth', '1', ...branchArgs, '--', target.cloneUrl, tempDir], {
       timeout: 60000,
     });
 
@@ -189,10 +199,20 @@ export async function runScan(repoUrl: string): Promise<ScanResult> {
         ? 'NO_AI_INTEGRATIONS'
         : ((cli.summary?.governance_status as ScanResult['gamma_status']) ?? 'BELOW_THRESHOLD');
 
+    const vsl: VslSummary | undefined = cli.vsl?.detected
+      ? {
+          detected: true,
+          gates_total: cli.vsl.gates_total ?? 0,
+          gates_by_kind: cli.vsl.gates_by_kind ?? {},
+          gates: cli.vsl.gates ?? [],
+        }
+      : undefined;
+
     return {
       scan_id: scanId,
       repo: repoUrl,
-      repo_name: repoName,
+      repo_name: target.displayName,
+      branch: target.branch,
       gamma: typeof cli.summary?.structural_gamma === 'number' ? cli.summary.structural_gamma : 0,
       gamma_status: gammaStatus,
       files_scanned: cli.summary?.files_scanned ?? 0,
@@ -207,6 +227,8 @@ export async function runScan(repoUrl: string): Promise<ScanResult> {
       stabilisation_operators_count: soCount,
       scan_date: cli.scan_date ?? new Date().toISOString(),
       scan_duration_ms: Date.now() - startedAt,
+      agent_actions: cli.summary?.agent_actions,
+      vsl,
     };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -214,9 +236,4 @@ export async function runScan(repoUrl: string): Promise<ScanResult> {
   } finally {
     rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }
-}
-
-function extractRepoName(url: string): string {
-  const parts = url.replace(/\.git$/, '').split('/');
-  return parts[parts.length - 1] || 'unknown';
 }

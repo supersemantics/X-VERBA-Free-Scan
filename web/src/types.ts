@@ -25,10 +25,35 @@ export interface SeverityBreakdown {
 
 export type ExportFormat = 'yaml' | 'json' | 'txt' | 'md';
 
+export interface AgentActionCount {
+  governed: number;
+  total: number;
+}
+
+export interface AgentActions {
+  tools: AgentActionCount;
+  model_calls: AgentActionCount;
+  total: AgentActionCount;
+}
+
+export interface VslGate {
+  kind: string;
+  name: string | null;
+  location: string;
+}
+
+export interface VslSummary {
+  detected: boolean;
+  gates_total: number;
+  gates_by_kind: Record<string, number>;
+  gates: VslGate[];
+}
+
 export interface ScanResult {
   scan_id: string;
   repo: string;
   repo_name: string;
+  branch?: string;
   gamma: number;
   gamma_status: 'BELOW_THRESHOLD' | 'PARTIAL_COVERAGE' | 'ABOVE_THRESHOLD' | 'NO_AI_INTEGRATIONS';
   files_scanned: number;
@@ -43,6 +68,8 @@ export interface ScanResult {
   stabilisation_operators_count: number;
   scan_date: string;
   scan_duration_ms: number;
+  agent_actions?: AgentActions;
+  vsl?: VslSummary;
 }
 
 export interface ScanHistoryEntry {

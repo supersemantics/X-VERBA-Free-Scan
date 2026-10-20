@@ -6,7 +6,7 @@ import TrendChart from '../components/TrendChart';
 import GlossaryTerm from '../components/GlossaryTerm';
 import { useSpotlight } from '../hooks/useSpotlight';
 import { getContract, getScanHistory } from '../api/client';
-import type { ScanResult, UngovernedNode, ScanHistoryEntry, ExportFormat } from '../types';
+import type { AgentActions, ScanResult, UngovernedNode, ScanHistoryEntry, ExportFormat, VslSummary } from '../types';
 
 type Tab = 'overview' | 'findings' | 'history';
 type SortKey = 'severity' | 'file' | 'type';
@@ -65,6 +65,11 @@ export default function Results() {
           <span className="text-white">{result.repo_name}</span>
         </div>
         <h1 className="font-display text-2xl font-bold text-white tracking-tight">X-VERBA Governance Report</h1>
+        {result.branch && (
+          <p className="text-xs text-verba-muted mt-1">
+            Branch <span className="font-mono text-white bg-verba-bg border border-verba-border px-1.5 py-0.5 rounded">{result.branch}</span>
+          </p>
+        )}
         <p className="text-sm text-verba-muted mt-1">
           Scanned {result.files_scanned} files &middot; {new Date(result.scan_date).toLocaleDateString()}
           {result.scan_duration_ms > 0 && <> &middot; {(result.scan_duration_ms / 1000).toFixed(1)}s</>}
@@ -96,6 +101,55 @@ export default function Results() {
       {tab === 'overview' && <OverviewTab result={result} noAi={noAi} noFindings={noFindings} navigate={navigate} setTab={setTab} />}
       {tab === 'findings' && <FindingsTab result={result} scanId={scanId!} />}
       {tab === 'history' && <HistoryTab repoName={result.repo_name} />}
+    </div>
+  );
+}
+
+// ── Agent actions + VSL gates ─────────────────────────────────────────────────
+
+type Spotlight = ReturnType<typeof useSpotlight>;
+
+function AgentActionsCard({ actions, spotlight }: { actions: AgentActions; spotlight: Spotlight }) {
+  const { total, tools, model_calls } = actions;
+  const allGoverned = total.governed === total.total;
+  return (
+    <div
+      onMouseMove={spotlight.onMouseMove}
+      className={`bg-verba-surface border border-verba-border rounded-xl p-5 ${spotlight.className}`}
+    >
+      <h3 className="text-sm font-medium text-white mb-3">Agent Actions Governed</h3>
+      <div className={`text-3xl font-bold ${allGoverned ? 'text-verba-green' : total.governed === 0 ? 'text-verba-red' : 'text-verba-amber'}`}>
+        {total.governed} / {total.total}
+      </div>
+      <div className="text-xs text-verba-muted mt-2">
+        Tools the agent can call {tools.governed}/{tools.total} &middot; Model calls {model_calls.governed}/{model_calls.total}
+      </div>
+    </div>
+  );
+}
+
+function VslGatesCard({ vsl, spotlight }: { vsl: VslSummary; spotlight: Spotlight }) {
+  const kinds = Object.entries(vsl.gates_by_kind).sort(([a], [b]) => a.localeCompare(b));
+  return (
+    <div
+      onMouseMove={spotlight.onMouseMove}
+      className={`bg-verba-surface border border-verba-accent/40 rounded-xl p-5 ${spotlight.className}`}
+    >
+      <h3 className="text-sm font-medium text-white mb-3">VSL Gates Recognised</h3>
+      <div className="flex items-baseline gap-3">
+        <div className="text-3xl font-bold text-verba-accent">{vsl.gates_total}</div>
+        <div className="text-xs text-verba-muted">{kinds.map(([k, n]) => `${n} ${k}`).join(' · ')}</div>
+      </div>
+      <ul className="mt-3 space-y-1">
+        {vsl.gates.map((g) => (
+          <li key={`${g.kind}-${g.location}`} className="text-xs text-gray-300">
+            <span className="text-verba-muted">{g.kind}</span> {g.name ?? '(unnamed)'}
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs text-verba-muted mt-3">
+        Credited from their wiring. Not verified: declared F1/F2 assurance, Gamma monitors, or runtime behaviour.
+      </p>
     </div>
   );
 }
@@ -183,6 +237,16 @@ function OverviewTab({
           <div className="text-sm text-verba-muted">vs typical agent repo</div>
         </div>
       </div>
+
+      {/* Agent actions + VSL gates (CLI 0.7.0+) */}
+      {(result.agent_actions?.total.total || result.vsl?.detected) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          {result.agent_actions && result.agent_actions.total.total > 0 && (
+            <AgentActionsCard actions={result.agent_actions} spotlight={spotlight} />
+          )}
+          {result.vsl?.detected && <VslGatesCard vsl={result.vsl} spotlight={spotlight} />}
+        </div>
+      )}
 
       {/* Severity + Agent Frameworks */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
