@@ -11,6 +11,21 @@ export interface UngovernedNode {
   issue: string;
   provider: string;
   confidence: 'high' | 'medium';
+  /** Link to the line on GitHub. */
+  source_url?: string;
+}
+
+/** One decision point Structural Gamma counts (CLI 0.7.0+). */
+export interface BreakdownItem {
+  /** "agent_tool", "model_call", or the decision type of other code (e.g. "conditional_branch"). */
+  kind: string;
+  name: string;
+  file: string;
+  line: number;
+  consequence_types: string[];
+  governed: boolean;
+  checkpoint: { type: string | null; strength: number | null; evidence: string | null } | null;
+  source_url?: string;
 }
 
 export interface DriftClassSummary {
@@ -40,6 +55,7 @@ export interface VslGate {
   kind: string;
   name: string | null;
   location: string;
+  source_url?: string;
 }
 
 /** A human-approval mechanism found in the code (CLI 0.7.0+). */
@@ -47,6 +63,7 @@ export interface HumanAuthorisation {
   kind: string;
   location: string;
   evidence: string;
+  source_url?: string;
 }
 
 export interface VslSummary {
@@ -79,6 +96,8 @@ export interface ScanResult {
   vsl?: VslSummary;
   /** Human-approval mechanisms the CLI recognised (CLI 0.7.0+). */
   human_authorisations?: HumanAuthorisation[];
+  /** Every decision point behind the Governance Score, governed or not (CLI 0.7.0+). */
+  breakdown?: BreakdownItem[];
 }
 
 export interface ScanHistoryEntry {

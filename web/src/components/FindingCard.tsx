@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { UngovernedNode } from '../types';
 import GlossaryTerm from './GlossaryTerm';
+import SourceLink from './SourceLink';
 import { useSpotlight } from '../hooks/useSpotlight';
 
 // Wraps every literal occurrence of "Pre-Node" in a GlossaryTerm — the
@@ -46,9 +47,7 @@ export default function FindingCard({ node, index }: { node: UngovernedNode; ind
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-verba-muted text-xs font-mono">Finding {index + 1}</span>
-          <span className="text-white text-sm font-medium">
-            {node.file}:{node.line}
-          </span>
+          <SourceLink file={node.file} line={node.line} url={node.source_url} className="text-sm font-medium" />
         </div>
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${style.badge}`}>
           {style.label}
@@ -75,6 +74,11 @@ export default function FindingCard({ node, index }: { node: UngovernedNode; ind
         <div className="text-xs text-verba-muted mb-1">Location</div>
         <div className="text-sm text-gray-300">
           {node.file}, line {node.line}
+          {node.source_url && (
+            <a href={node.source_url} target="_blank" rel="noreferrer" className="ml-2 text-xs text-verba-accent hover:underline">
+              Open on GitHub &#x2197;
+            </a>
+          )}
         </div>
       </div>
 

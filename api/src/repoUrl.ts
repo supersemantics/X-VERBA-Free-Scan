@@ -15,6 +15,8 @@ export interface RepoTarget {
   name: string;
   /** Name shown in reports and used for scan history, e.g. "CareAssist" or "CareAssist (demo/without-vsl)". */
   displayName: string;
+  /** Base for links to a file at a line: `${sourceBase}/<path>#L<line>`. */
+  sourceBase: string;
 }
 
 const REPO_RE = /^https?:\/\/(?:www\.)?github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?(?:\/tree\/(.+?))?\/?$/i;
@@ -44,5 +46,6 @@ export function parseRepoUrl(url: string): RepoTarget | null {
     branch,
     name: repo,
     displayName: branch ? `${repo} (${branch})` : repo,
+    sourceBase: `https://github.com/${owner}/${repo}/blob/${branch ? encodeURI(branch) : 'HEAD'}`,
   };
 }
