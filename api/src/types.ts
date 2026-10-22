@@ -15,12 +15,62 @@ export interface UngovernedNode {
   issue: string;
   provider: string;
   confidence: 'high' | 'medium';
+  /** Link to the line on GitHub. */
+  source_url?: string;
+}
+
+/** One decision point Structural Gamma counts (CLI 0.7.0+). */
+export interface BreakdownItem {
+  /** "agent_tool", "model_call", or the decision type of other code (e.g. "conditional_branch"). */
+  kind: string;
+  name: string;
+  file: string;
+  line: number;
+  consequence_types: string[];
+  governed: boolean;
+  checkpoint: { type: string | null; strength: number | null; evidence: string | null } | null;
+  source_url?: string;
+}
+
+export interface AgentActionCount {
+  governed: number;
+  total: number;
+}
+
+export interface AgentActions {
+  tools: AgentActionCount;
+  model_calls: AgentActionCount;
+  total: AgentActionCount;
+}
+
+export interface VslGate {
+  kind: string;
+  name: string | null;
+  location: string;
+  source_url?: string;
+}
+
+/** A human-approval mechanism found in the code (CLI 0.7.0+). */
+export interface HumanAuthorisation {
+  kind: string;
+  location: string;
+  evidence: string;
+  source_url?: string;
+}
+
+export interface VslSummary {
+  detected: boolean;
+  gates_total: number;
+  gates_by_kind: Record<string, number>;
+  gates: VslGate[];
 }
 
 export interface ScanResult {
   scan_id: string;
   repo: string;
   repo_name: string;
+  /** Branch scanned, when the URL named one (…/tree/<branch>). */
+  branch?: string;
   gamma: number;
   gamma_status: string;
   files_scanned: number;
@@ -36,6 +86,14 @@ export interface ScanResult {
   scan_date: string;
   scan_duration_ms: number;
   contract_yaml?: string;
+  /** Tools the agent's model can call, and model calls: governed / total (CLI 0.7.0+). */
+  agent_actions?: AgentActions;
+  /** VSL gates the CLI recognised (CLI 0.7.0+). */
+  vsl?: VslSummary;
+  /** Human-approval mechanisms the CLI recognised (CLI 0.7.0+). */
+  human_authorisations?: HumanAuthorisation[];
+  /** Every decision point behind the Governance Score, governed or not (CLI 0.7.0+). */
+  breakdown?: BreakdownItem[];
 }
 
 export interface ScanHistoryEntry {

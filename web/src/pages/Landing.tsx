@@ -45,8 +45,8 @@ export default function Landing() {
       return;
     }
     // Basic URL validation
-    if (!trimmed.match(/^https?:\/\/(www\.)?github\.com\/.+\/.+/i) && !trimmed.match(/^[^/]+\/[^/]+$/)) {
-      setError('Enter a valid GitHub URL (e.g. https://github.com/org/repo)');
+    if (!trimmed.match(/^https?:\/\/(www\.)?github\.com\/[^/]+\/[^/]+(\/tree\/.+)?\/?$/i) && !trimmed.match(/^[^/]+\/[^/]+$/)) {
+      setError('Enter a valid GitHub URL (e.g. https://github.com/org/repo, or …/tree/<branch> for a branch)');
       return;
     }
     setError('');
@@ -117,7 +117,7 @@ export default function Landing() {
             value={repoUrl}
             onChange={(e) => { setRepoUrl(e.target.value); setError(''); }}
             onKeyDown={(e) => e.key === 'Enter' && handleScan()}
-            placeholder="https://github.com/org/repo"
+            placeholder="https://github.com/org/repo  (or …/tree/<branch>)"
             className="w-full bg-verba-bg border border-verba-border rounded-lg px-4 py-3 text-white placeholder-verba-muted/50 focus:outline-none focus:border-verba-accent transition-colors font-mono text-sm"
           />
           {error && (

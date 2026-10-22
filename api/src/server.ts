@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runScan } from './scanner.js';
+import { parseRepoUrl } from './repoUrl.js';
 import { saveScan, getScan, getHistory } from './db.js';
 
 const app = express();
@@ -28,9 +29,8 @@ api.post('/scan', async (req, res) => {
     return;
   }
 
-  // Basic URL validation
-  const urlPattern = /^https?:\/\/(www\.)?github\.com\/[^/]+\/[^/]+/i;
-  if (!urlPattern.test(repo_url)) {
+  // https://github.com/org/repo, optionally …/tree/<branch>
+  if (!parseRepoUrl(repo_url)) {
     res.status(400).json({ error: 'Invalid GitHub repository URL' });
     return;
   }

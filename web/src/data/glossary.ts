@@ -201,15 +201,17 @@ const CONCEPTS: GlossaryEntry[] = [
     id: 'GAMMA',
     kind: 'concept',
     term: 'Structural Gamma (Γ)',
-    shortDefinition: 'The share of decision points in a codebase that have an observable governance checkpoint.',
+    shortDefinition: 'The share of consequential decision points in a codebase that have an observable governance checkpoint.',
     definition:
-      'Γ = Governed Decision Points ÷ Total Discoverable Decision Points.\n\n' +
-      'Γ = 1.0 — every decision point found has a governance check.\n' +
-      'Γ < 1.0 — some decision points are ungoverned.\n' +
-      'Γ = 0.00 — decision points were found, and none of them are governed. ' +
+      'Γ = Governed Consequential Decision Points ÷ Total Consequential Decision Points.\n\n' +
+      'Consequential decision points are the ones that act: AI model calls, tools an agent can call, ' +
+      'writes, external calls and irreversible actions. Ordinary branching code is not counted.\n\n' +
+      'Γ = 1.0 — every consequential decision point found has a governance check.\n' +
+      'Γ < 1.0 — some are ungoverned.\n' +
+      'Γ = 0.00 — consequential decision points were found, and none of them are governed. ' +
       '(Distinct from repos with no AI calls at all, which show a separate "No AI Integrations ' +
       'Detected" result rather than a Γ score.)\n\n' +
-      'Default sufficiency threshold: Γ ≥ 0.9.',
+      'Bands: Γ ≥ 0.9 well governed, 0.5 to 0.9 partial coverage, below 0.5 significant gaps.',
   },
   {
     id: 'PRE_NODE',

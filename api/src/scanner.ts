@@ -4,7 +4,8 @@ import { randomUUID } from 'node:crypto';
 import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { ScanResult, UngovernedNode } from './types.js';
+import type { AgentActions, BreakdownItem, HumanAuthorisation, ScanResult, UngovernedNode, VslSummary } from './types.js';
+import { parseRepoUrl } from './repoUrl.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -62,6 +63,12 @@ interface CliLegionMatch {
 
 interface CliScanResult {
   scan_date?: string;
+  vsl?: {
+    detected?: boolean;
+    gates_total?: number;
+    gates_by_kind?: Record<string, number>;
+    gates?: { kind: string; name: string | null; location: string }[];
+  };
   primitives?: {
     ai_integrations?: CliAiIntegration[];
     irreversible_actions?: CliIrreversibleAction[];
@@ -69,14 +76,27 @@ interface CliScanResult {
   };
   gaps?: CliGap[];
   legion_matches?: CliLegionMatch[];
+  decision_points?: { framework?: string }[];
+  gamma_breakdown?: Omit<BreakdownItem, 'source_url'>[];
   summary?: {
     files_scanned?: number;
     ai_integrations_detected?: number;
     decision_points_detected?: number;
     structural_gamma?: number | null;
     governance_status?: string;
+    agent_actions?: AgentActions;
+    vsl?: { human_authorisations?: HumanAuthorisation[] };
   };
 }
+
+// Display names for the agent frameworks this tool is scoped to. Anything
+// else the CLI reports is shown under its own name.
+const FRAMEWORK_LABELS: Record<string, string> = {
+  langchain: 'LangChain',
+  langgraph: 'LangGraph',
+  openai: 'OpenAI',
+  openai_agents_sdk: 'OpenAI Agents SDK',
+};
 
 // ── Reshape helpers ───────────────────────────────────────────────────────
 
@@ -108,18 +128,33 @@ function findEvidence(
   return { code: '', provider: '' };
 }
 
+// "backend\\app\\x.py:12" → { file: "backend/app/x.py", line: 12 }
+function splitLocation(location: string): { file: string; line: number } {
+  const i = location.lastIndexOf(':');
+  const file = (i > 0 ? location.slice(0, i) : location).replace(/\\/g, '/');
+  const line = i > 0 ? parseInt(location.slice(i + 1), 10) || 0 : 0;
+  return { file, line };
+}
+
+function sourceUrl(sourceBase: string, file: string, line: number): string {
+  const path = file.split('/').map(encodeURIComponent).join('/');
+  return line > 0 ? `${sourceBase}/${path}#L${line}` : `${sourceBase}/${path}`;
+}
+
 function mapGapToNode(
   gap: CliGap,
   primitives: CliScanResult['primitives'],
   legionByLocation: Map<string, CliLegionMatch>,
+  sourceBase: string,
 ): UngovernedNode {
-  const [file, lineStr] = gap.location.split(':');
+  const { file, line } = splitLocation(gap.location);
   const legion = legionByLocation.get(gap.location);
   const { code, provider } = findEvidence(primitives, gap.location);
 
   return {
     file: file || 'unknown',
-    line: parseInt(lineStr || '0', 10),
+    line,
+    source_url: file ? sourceUrl(sourceBase, file, line) : undefined,
     code: code || gap.plain_english,
     drift_class: legion?.dc_code || gap.type.toUpperCase(),
     drift_class_name: legion?.dc_name || gap.verba_term,
@@ -136,13 +171,15 @@ function mapGapToNode(
 export async function runScan(repoUrl: string): Promise<ScanResult> {
   const startedAt = Date.now();
   const scanId = randomUUID();
-  const repoName = extractRepoName(repoUrl);
+  const target = parseRepoUrl(repoUrl);
+  if (!target) throw new Error('Scan failed: invalid GitHub repository URL');
   const tempDir = await mkdtemp(join(tmpdir(), 'xverba-'));
   const reportPath = join(tempDir, '.xverba-report.json');
 
   try {
-    // Clone repo to temp dir
-    await execFileAsync('git', ['clone', '--depth', '1', repoUrl, tempDir], {
+    // Clone the repo (the named branch, if the URL had /tree/<branch>).
+    const branchArgs = target.branch ? ['--branch', target.branch] : [];
+    await execFileAsync('git', ['clone', '--depth', '1', ...branchArgs, '--', target.cloneUrl, tempDir], {
       timeout: 60000,
     });
 
@@ -161,7 +198,7 @@ export async function runScan(repoUrl: string): Promise<ScanResult> {
     const legionByLocation = new Map<string, CliLegionMatch>();
     for (const m of cli.legion_matches ?? []) legionByLocation.set(m.location, m);
 
-    const nodes = (cli.gaps ?? []).map((g) => mapGapToNode(g, cli.primitives, legionByLocation));
+    const nodes = (cli.gaps ?? []).map((g) => mapGapToNode(g, cli.primitives, legionByLocation, target.sourceBase));
 
     const dcSummary: Record<string, number> = {};
     for (const n of nodes) dcSummary[n.drift_class] = (dcSummary[n.drift_class] || 0) + 1;
@@ -169,9 +206,13 @@ export async function runScan(repoUrl: string): Promise<ScanResult> {
     const severityBreakdown = { critical: 0, high: 0, medium: 0 };
     for (const n of nodes) severityBreakdown[n.severity]++;
 
-    const frameworksDetected = Array.from(
-      new Set((cli.primitives?.ai_integrations ?? []).map((a) => a.provider).filter((p): p is string => Boolean(p))),
-    );
+    // Frameworks from the AI calls (provider) and from the decision points
+    // the CLI attributes to a framework (e.g. LangGraph graph wiring).
+    const frameworkKeys = [
+      ...(cli.primitives?.ai_integrations ?? []).map((a) => a.provider),
+      ...(cli.decision_points ?? []).map((d) => d.framework),
+    ].filter((f): f is string => Boolean(f) && f !== 'unknown' && f !== 'ai_framework');
+    const frameworksDetected = Array.from(new Set(frameworkKeys.map((f) => FRAMEWORK_LABELS[f] ?? f)));
 
     const uniqueFiles = new Set(nodes.map((n) => n.file));
     const preNodesCount = (cli.primitives?.ai_integrations ?? []).filter((a) => a.pre_node_detected).length;
@@ -189,10 +230,23 @@ export async function runScan(repoUrl: string): Promise<ScanResult> {
         ? 'NO_AI_INTEGRATIONS'
         : ((cli.summary?.governance_status as ScanResult['gamma_status']) ?? 'BELOW_THRESHOLD');
 
+    const vsl: VslSummary | undefined = cli.vsl?.detected
+      ? {
+          detected: true,
+          gates_total: cli.vsl.gates_total ?? 0,
+          gates_by_kind: cli.vsl.gates_by_kind ?? {},
+          gates: (cli.vsl.gates ?? []).map((g) => {
+            const { file, line } = splitLocation(g.location);
+            return { ...g, location: `${file}:${line}`, source_url: sourceUrl(target.sourceBase, file, line) };
+          }),
+        }
+      : undefined;
+
     return {
       scan_id: scanId,
       repo: repoUrl,
-      repo_name: repoName,
+      repo_name: target.displayName,
+      branch: target.branch,
       gamma: typeof cli.summary?.structural_gamma === 'number' ? cli.summary.structural_gamma : 0,
       gamma_status: gammaStatus,
       files_scanned: cli.summary?.files_scanned ?? 0,
@@ -207,6 +261,17 @@ export async function runScan(repoUrl: string): Promise<ScanResult> {
       stabilisation_operators_count: soCount,
       scan_date: cli.scan_date ?? new Date().toISOString(),
       scan_duration_ms: Date.now() - startedAt,
+      agent_actions: cli.summary?.agent_actions,
+      vsl,
+      human_authorisations: (cli.summary?.vsl?.human_authorisations ?? []).map((h) => {
+        const { file, line } = splitLocation(h.location);
+        return { ...h, location: `${file}:${line}`, source_url: sourceUrl(target.sourceBase, file, line) };
+      }),
+      breakdown: (cli.gamma_breakdown ?? []).map((item) => ({
+        ...item,
+        file: item.file.replace(/\\/g, '/'),
+        source_url: sourceUrl(target.sourceBase, item.file.replace(/\\/g, '/'), item.line),
+      })),
     };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -214,9 +279,4 @@ export async function runScan(repoUrl: string): Promise<ScanResult> {
   } finally {
     rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }
-}
-
-function extractRepoName(url: string): string {
-  const parts = url.replace(/\.git$/, '').split('/');
-  return parts[parts.length - 1] || 'unknown';
 }
