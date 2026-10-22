@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { AgentActions, ScanResult, UngovernedNode, VslSummary } from './types.js';
+import type { AgentActions, HumanAuthorisation, ScanResult, UngovernedNode, VslSummary } from './types.js';
 import { parseRepoUrl } from './repoUrl.js';
 
 const execFileAsync = promisify(execFile);
@@ -76,6 +76,7 @@ interface CliScanResult {
   };
   gaps?: CliGap[];
   legion_matches?: CliLegionMatch[];
+  decision_points?: { framework?: string }[];
   summary?: {
     files_scanned?: number;
     ai_integrations_detected?: number;
@@ -83,8 +84,18 @@ interface CliScanResult {
     structural_gamma?: number | null;
     governance_status?: string;
     agent_actions?: AgentActions;
+    vsl?: { human_authorisations?: HumanAuthorisation[] };
   };
 }
+
+// Display names for the agent frameworks this tool is scoped to. Anything
+// else the CLI reports is shown under its own name.
+const FRAMEWORK_LABELS: Record<string, string> = {
+  langchain: 'LangChain',
+  langgraph: 'LangGraph',
+  openai: 'OpenAI',
+  openai_agents_sdk: 'OpenAI Agents SDK',
+};
 
 // ── Reshape helpers ───────────────────────────────────────────────────────
 
@@ -179,9 +190,13 @@ export async function runScan(repoUrl: string): Promise<ScanResult> {
     const severityBreakdown = { critical: 0, high: 0, medium: 0 };
     for (const n of nodes) severityBreakdown[n.severity]++;
 
-    const frameworksDetected = Array.from(
-      new Set((cli.primitives?.ai_integrations ?? []).map((a) => a.provider).filter((p): p is string => Boolean(p))),
-    );
+    // Frameworks from the AI calls (provider) and from the decision points
+    // the CLI attributes to a framework (e.g. LangGraph graph wiring).
+    const frameworkKeys = [
+      ...(cli.primitives?.ai_integrations ?? []).map((a) => a.provider),
+      ...(cli.decision_points ?? []).map((d) => d.framework),
+    ].filter((f): f is string => Boolean(f) && f !== 'unknown' && f !== 'ai_framework');
+    const frameworksDetected = Array.from(new Set(frameworkKeys.map((f) => FRAMEWORK_LABELS[f] ?? f)));
 
     const uniqueFiles = new Set(nodes.map((n) => n.file));
     const preNodesCount = (cli.primitives?.ai_integrations ?? []).filter((a) => a.pre_node_detected).length;
@@ -229,6 +244,7 @@ export async function runScan(repoUrl: string): Promise<ScanResult> {
       scan_duration_ms: Date.now() - startedAt,
       agent_actions: cli.summary?.agent_actions,
       vsl,
+      human_authorisations: cli.summary?.vsl?.human_authorisations ?? [],
     };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Unknown error';

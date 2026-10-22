@@ -34,6 +34,13 @@ export interface VslGate {
   location: string;
 }
 
+/** A human-approval mechanism found in the code (CLI 0.7.0+). */
+export interface HumanAuthorisation {
+  kind: string;
+  location: string;
+  evidence: string;
+}
+
 export interface VslSummary {
   detected: boolean;
   gates_total: number;
@@ -66,6 +73,8 @@ export interface ScanResult {
   agent_actions?: AgentActions;
   /** VSL gates the CLI recognised (CLI 0.7.0+). */
   vsl?: VslSummary;
+  /** Human-approval mechanisms the CLI recognised (CLI 0.7.0+). */
+  human_authorisations?: HumanAuthorisation[];
 }
 
 export interface ScanHistoryEntry {

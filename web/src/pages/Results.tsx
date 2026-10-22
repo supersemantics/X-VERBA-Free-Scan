@@ -6,7 +6,7 @@ import TrendChart from '../components/TrendChart';
 import GlossaryTerm from '../components/GlossaryTerm';
 import { useSpotlight } from '../hooks/useSpotlight';
 import { getContract, getScanHistory } from '../api/client';
-import type { AgentActions, ScanResult, UngovernedNode, ScanHistoryEntry, ExportFormat, VslSummary } from '../types';
+import type { AgentActions, HumanAuthorisation, ScanResult, UngovernedNode, ScanHistoryEntry, ExportFormat, VslSummary } from '../types';
 
 type Tab = 'overview' | 'findings' | 'history';
 type SortKey = 'severity' | 'file' | 'type';
@@ -154,6 +154,35 @@ function VslGatesCard({ vsl, spotlight }: { vsl: VslSummary; spotlight: Spotligh
   );
 }
 
+function HumanAuthorisationCard({ items, spotlight }: { items: HumanAuthorisation[]; spotlight: Spotlight }) {
+  return (
+    <div
+      onMouseMove={spotlight.onMouseMove}
+      className={`bg-verba-surface border border-verba-green/40 rounded-xl p-5 ${spotlight.className}`}
+    >
+      <h3 className="text-sm font-medium text-white mb-3">Human Authorisation</h3>
+      <ul className="space-y-2">
+        {items.map((h) => (
+          <li key={`${h.kind}-${h.location}`} className="text-xs text-gray-300">
+            <span className="text-verba-green">{h.kind}</span>
+            <div className="text-verba-muted">{h.evidence}</div>
+            <div className="font-mono text-verba-muted break-all">{h.location}</div>
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs text-verba-muted mt-3">
+        Recognised from the code: an action that cannot run without a person&apos;s approval.
+      </p>
+    </div>
+  );
+}
+
+const STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  ABOVE_THRESHOLD: { label: 'Well governed', className: 'text-verba-green' },
+  PARTIAL_COVERAGE: { label: 'Partial coverage', className: 'text-verba-amber' },
+  BELOW_THRESHOLD: { label: 'Significant gaps', className: 'text-verba-red' },
+};
+
 // ── Overview tab ──────────────────────────────────────────────────────────────
 
 function OverviewTab({
@@ -196,10 +225,10 @@ function OverviewTab({
       {noFindings && (
         <div className="mb-8 bg-verba-surface border border-verba-green/30 rounded-2xl p-8 text-center">
           <div className="text-4xl mb-4">&#x2705;</div>
-          <h2 className="font-display text-lg font-semibold text-white mb-2">All Decision Points Governed</h2>
+          <h2 className="font-display text-lg font-semibold text-white mb-2">No Governance Gaps Found</h2>
           <p className="text-sm text-verba-muted max-w-md mx-auto">
-            Every decision point in this repo has a governance check. Structural Gamma:{' '}
-            <strong className="text-verba-green">{result.gamma}</strong>.
+            Every consequential decision point X-VERBA found has a governance check. Structural Gamma:{' '}
+            <strong className="text-verba-green">{result.gamma.toFixed(2)}</strong>.
           </p>
         </div>
       )}
@@ -214,13 +243,16 @@ function OverviewTab({
           <div className="text-xs text-verba-muted mt-2">
             <GlossaryTerm id="GAMMA">Governance Score</GlossaryTerm>
           </div>
+          <div className="text-xs text-verba-muted mt-1">
+            Share of consequential decision points with a governance check
+          </div>
         </div>
         <div
           onMouseMove={spotlight.onMouseMove}
           className={`bg-verba-surface border border-verba-border rounded-xl p-4 transition-transform hover:-translate-y-0.5 ${spotlight.className}`}
         >
           <div className="text-3xl font-bold text-white">{result.ungoverned_nodes.length}</div>
-          <div className="text-sm text-verba-muted">Ungoverned AI Calls</div>
+          <div className="text-sm text-verba-muted">Findings</div>
         </div>
         <div
           onMouseMove={spotlight.onMouseMove}
@@ -231,22 +263,27 @@ function OverviewTab({
         </div>
         <div
           onMouseMove={spotlight.onMouseMove}
-          className={`bg-verba-accent/10 border border-verba-accent/40 rounded-xl p-4 transition-transform hover:-translate-y-0.5 ${spotlight.className}`}
+          className={`bg-verba-surface border border-verba-border rounded-xl p-4 transition-transform hover:-translate-y-0.5 ${spotlight.className}`}
         >
-          <div className="text-3xl font-bold text-verba-accent">&Gamma;=0</div>
-          <div className="text-sm text-verba-muted">vs typical agent repo</div>
+          <div className={`text-xl font-bold ${(STATUS_LABELS[result.gamma_status] ?? STATUS_LABELS.BELOW_THRESHOLD).className}`}>
+            {STATUS_LABELS[result.gamma_status]?.label ?? result.gamma_status}
+          </div>
+          <div className="text-sm text-verba-muted">Governance Status</div>
         </div>
       </div>
 
-      {/* Agent actions + VSL gates (CLI 0.7.0+) */}
-      {(result.agent_actions?.total.total || result.vsl?.detected) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      {/* Agent actions, VSL gates, human authorisation (CLI 0.7.0+) */}
+      {(result.agent_actions?.total.total || result.vsl?.detected || result.human_authorisations?.length) ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           {result.agent_actions && result.agent_actions.total.total > 0 && (
             <AgentActionsCard actions={result.agent_actions} spotlight={spotlight} />
           )}
           {result.vsl?.detected && <VslGatesCard vsl={result.vsl} spotlight={spotlight} />}
+          {result.human_authorisations && result.human_authorisations.length > 0 && (
+            <HumanAuthorisationCard items={result.human_authorisations} spotlight={spotlight} />
+          )}
         </div>
-      )}
+      ) : null}
 
       {/* Severity + Agent Frameworks */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -326,7 +363,14 @@ function OverviewTab({
         <div className="bg-verba-surface border-2 border-verba-accent/60 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h3 className="text-white font-semibold mb-1">
-              {result.severity_breakdown.critical || 0} critical gaps found in this repo
+              {result.ungoverned_nodes.length} governance {result.ungoverned_nodes.length === 1 ? 'gap' : 'gaps'} found in this repo
+              {' '}
+              <span className="text-verba-muted font-normal">
+                ({(['critical', 'high', 'medium'] as const)
+                  .filter((sev) => result.severity_breakdown[sev])
+                  .map((sev) => `${result.severity_breakdown[sev]} ${sev}`)
+                  .join(', ')})
+              </span>
             </h3>
             <p className="text-sm text-verba-muted">
               See how the full Scan API resolves cross-file coverage and tracks these over time.

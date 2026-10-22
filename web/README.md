@@ -19,7 +19,7 @@ npm run dev
 ```bash
 cd web
 npm run dev
-# Runs on http://localhost:5173
+# Runs on http://localhost:5174
 # API calls proxy to :3001
 ```
 
