@@ -31,6 +31,10 @@ npm run dev         # → http://localhost:5174
 
 Open [http://localhost:5174](http://localhost:5174) — the frontend proxies `/api` requests to the API server automatically (see [`web/vite.config.ts`](./web/vite.config.ts)). Paste a GitHub URL or pick one of the pre-scanned example repos to see a live Gamma (Γ) score and governance report.
 
+The pre-scanned examples are stored in `api/data/featured-scans.json`. To refresh them after an engine upgrade, start the API (ideally the Docker image, which matches the hosted site) and run `node api/scripts/refresh-featured.mjs http://localhost:3001`.
+
+How to read a report: the **Governance Score (Γ)** is the share of consequential decision points (model calls, agent tools, and code that changes data, files or outside systems) that have a governance check. 0.9 or more counts as well governed, and below 0.5 as significant gaps. **Not governed** lists the decision points without a check. **Recommended fixes** are specific gaps the engine can explain with a suggested change; they're a separate check, so a repo can have ungoverned decision points and no recommended fixes.
+
 Paste a GitHub link in any of the shapes GitHub gives you:
 
 | You paste | Free Scan scans |

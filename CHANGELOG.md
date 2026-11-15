@@ -2,6 +2,38 @@
 
 All notable changes to X-VERBA Free Scan. Versions follow [semantic versioning](https://semver.org/); the API and web packages share one version.
 
+## 0.4.0: one consistent verdict, featured scans on x-verba 0.7.0
+
+### The report no longer contradicts itself
+
+- **Before:** the report mixed two separate engine outputs without saying so. The Governance Score (Γ) and the status come from the *decision points* the engine counts. "Findings", "Files affected", Severity and Drift classes come from a separate list of *gaps*, and the two lists don't overlap. So a repo whose gap list was empty showed "No Governance Gaps Found" at the top, next to "Significant gaps" and Γ 0.17.
+- **After:** one verdict at the top, worked out from the same numbers as the score: the status, "N of M decision points have a governance check, so Γ = …", how many of the agent's own actions are governed, and how many recommended fixes there are. "No governance gaps found" now appears only when Γ is 0.9 or more, nothing is ungoverned, and there are no fixes. The two lists are named for what they are: **Not governed** (decision points, which make up the score) and **Recommended fixes** (the gap list, previously "Findings"). Severity and drift-class cards now say they count fixes. The status card explains its bands.
+- **Breakdown:** the agent's own actions come first, then what isn't governed. Long lists show 100 rows with a "Show all" button (AutoGPT has 2,368). "See what isn't governed" now scrolls to the list's heading instead of the middle of it.
+- A tool's registering decorator (e.g. `@tool`) is no longer described as a checkpoint "that does not count". It says there's no checkpoint, and what the decorator does.
+- On an empty Recommended fixes tab, the page now explains that this doesn't mean the code is governed, when decision points are still ungoverned.
+- Home page cards lead with how many agent actions are governed.
+
+### Featured scans re-scanned with x-verba 0.7.0
+
+| Repo | Before (August, older engine) | Now (0.7.0) |
+|---|---|---|
+| TradingAgents | Γ 0.17, 10 findings | Γ 0.13 (11 of 83), 0 of 12 agent tools governed, 21 recommended fixes |
+| AutoGPT | Γ 0.06, 252 findings | Γ 0.22 (517 of 2,368), 0 of 59 model calls governed, 486 recommended fixes |
+| TaskWeaver | Γ 0.40, 12 findings | Γ 0.19 (45 of 237), 0 of 16 model calls governed, 25 recommended fixes |
+
+Each keeps its scan ID, so existing links still work. The full results (2.4 MB, mostly AutoGPT) moved to `api/data/featured-scans.json`, which the API loads at startup. The page bundles only a 2 KB summary for the home page cards, and the report fetches the rest. `node api/scripts/refresh-featured.mjs <api-url>` re-scans all three and rewrites both files.
+
+### Also
+
+- Removed a line in the report that pointed to a separate commercial product.
+- Removed the "Test cases" figure: it was an estimate (`gaps × 1.5 + drift classes`), not a count. `test_cases_count` is no longer produced.
+- Clones use `core.longpaths`, so Free Scan running on Windows can check out repos with deep paths (AutoGPT failed before). Gap descriptions from Windows scans show paths with `/`.
+
+### Tests
+
+- `npm test` in `api/`: 10 pass. `tsc` is clean in both packages.
+- Checked in the browser against the Docker image: the TradingAgents, TaskWeaver and AutoGPT reports, including the ungoverned list and "Show all". AutoGPT opens in about 0.1 s. A Γ 1.00 repo shows green "No governance gaps found" with every card agreeing, and a Γ 0.89 one shows "Partial coverage" with 1 fix and 1 ungoverned item.
+
 ## 0.3.1: scan private repos when running locally
 
 - **Before:** 0.3.0 turned off git's stored credentials everywhere, so a public deployment never waits on a login. That also stopped a locally run Free Scan from scanning private repos the machine's own GitHub login can reach, which used to work.

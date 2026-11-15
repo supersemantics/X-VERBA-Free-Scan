@@ -221,7 +221,8 @@ function mapGapToNode(
     drift_class_name: legion?.dc_name || gap.verba_term,
     severity: gap.severity,
     recommendation: gap.recommended_action,
-    issue: gap.plain_english,
+    // Windows scans report paths with backslashes; show them as GitHub does.
+    issue: gap.plain_english.replace(/([\w.-])\\(?=[\w.-])/g, '$1/'),
     provider,
     confidence: legion ? (legion.confidence === 'HIGH' ? 'high' : 'medium') : 'high',
   };
@@ -243,7 +244,12 @@ export async function runScan(repoUrl: string): Promise<ScanResult> {
     // Clone the repo (the named branch or tag, if the link had one).
     const branchArgs = target.branch ? ['--branch', target.branch] : [];
     try {
-      await git(['clone', '--depth', '1', '--single-branch', ...branchArgs, '--', target.cloneUrl, cloneDir], 90000);
+      // core.longpaths: on Windows, deep paths (e.g. in large JS monorepos)
+      // otherwise fail the checkout. No effect elsewhere.
+      await git(
+        ['-c', 'core.longpaths=true', 'clone', '--depth', '1', '--single-branch', ...branchArgs, '--', target.cloneUrl, cloneDir],
+        90000,
+      );
     } catch (err) {
       throw gitError(err, target.branch);
     }
@@ -334,7 +340,6 @@ export async function runScan(repoUrl: string): Promise<ScanResult> {
       severity_breakdown: severityBreakdown,
       frameworks_detected: frameworksDetected,
       contract_size_kb: Math.round((raw.length / 1024) * 10) / 10,
-      test_cases_count: nodes.length + soCount + Math.ceil(nodes.length * 0.5),
       pre_nodes_count: preNodesCount,
       stabilisation_operators_count: soCount,
       scan_date: cli.scan_date ?? new Date().toISOString(),

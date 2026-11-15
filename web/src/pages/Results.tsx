@@ -42,7 +42,7 @@ function sortNodes(nodes: UngovernedNode[], sortKey: SortKey): UngovernedNode[] 
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'overview', label: 'Overview' },
-  { key: 'findings', label: 'Findings' },
+  { key: 'findings', label: 'Recommended fixes' },
   { key: 'history', label: 'History' },
 ];
 
@@ -104,7 +104,6 @@ export default function Results() {
   }
 
   const noAi = result.gamma_status === 'NO_AI_INTEGRATIONS';
-  const noFindings = !noAi && result.ungoverned_nodes.length === 0;
 
   return (
     <div>
@@ -163,7 +162,7 @@ export default function Results() {
       </div>
 
       {tab === 'overview' && (
-        <OverviewTab result={result} noAi={noAi} noFindings={noFindings} navigate={navigate} openFindings={openFindings} />
+        <OverviewTab result={result} noAi={noAi} navigate={navigate} openFindings={openFindings} />
       )}
       {tab === 'findings' && (
         <FindingsTab
@@ -259,6 +258,11 @@ const CONSEQUENCE_LABELS: Record<string, string> = {
 };
 
 const GOVERNED_BAR = 0.7;
+const BREAKDOWN_PAGE = 100;
+
+function isAgentAction(item: BreakdownItem): boolean {
+  return item.kind === 'agent_tool' || item.kind === 'model_call';
+}
 
 function kindLabel(item: BreakdownItem): string {
   if (KIND_LABELS[item.kind]) return KIND_LABELS[item.kind];
@@ -272,6 +276,12 @@ function checkpointText(item: BreakdownItem): string {
   const cp = item.checkpoint;
   if (item.governed) {
     return cp?.evidence ? `Governed by ${cp.evidence}` : 'Governed by a checkpoint';
+  }
+  // The engine reports the decorator that registers a tool (e.g. "@tool") as
+  // a weak checkpoint. It only makes the function callable by the agent; it
+  // checks nothing, so don't call it a checkpoint.
+  if (cp?.evidence && /^@[\w.]+$/.test(cp.evidence.trim())) {
+    return `No checkpoint in front of it. (${cp.evidence.trim()} only registers it as a tool the agent can call.)`;
   }
   if (cp?.evidence && cp.strength !== null) {
     return (
@@ -300,7 +310,17 @@ function GovernanceBreakdown({
   highlight: string | null;
 }) {
   const governed = items.filter((i) => i.governed).length;
-  const shown = items.filter((i) => (view === 'all' ? true : view === 'governed' ? i.governed : !i.governed));
+  const [showAll, setShowAll] = useState(false);
+  // Agent actions first (they're what an agent can actually do), then what
+  // isn't governed, so the important rows aren't buried in long repos.
+  const rank = (i: BreakdownItem) => (isAgentAction(i) ? 0 : 2) + (i.governed ? 1 : 0);
+  const matching = items
+    .filter((i) => (view === 'all' ? true : view === 'governed' ? i.governed : !i.governed))
+    .sort((a, b) => rank(a) - rank(b));
+  const highlighted = highlight ? matching.findIndex((i) => itemId(i) === highlight) : -1;
+  const limit = showAll || highlighted >= BREAKDOWN_PAGE ? matching.length : BREAKDOWN_PAGE;
+  const shown = matching.slice(0, limit);
+  const agentCount = items.filter(isAgentAction).length;
   const views: { key: BreakdownView; label: string }[] = [
     { key: 'all', label: `All ${items.length}` },
     { key: 'ungoverned', label: `Not governed ${items.length - governed}` },
@@ -328,7 +348,9 @@ function GovernanceBreakdown({
         </div>
       </div>
       <p className="text-xs text-verba-muted mb-4">
-        {governed} of {items.length} consequential decision points have a governance check. Each one is listed below.
+        {governed} of {items.length} consequential decision points have a governance check: places where code calls a
+        model, runs an agent tool, or changes data, files or outside systems. Governance Score = {governed} &divide;{' '}
+        {items.length}.{agentCount > 0 && <> The agent&apos;s own actions ({agentCount}) are listed first.</>}
       </p>
       {shown.length === 0 && <p className="text-xs text-verba-muted">Nothing in this view.</p>}
       <ul className="divide-y divide-verba-border">
@@ -357,6 +379,15 @@ function GovernanceBreakdown({
           );
         })}
       </ul>
+      {matching.length > shown.length && (
+        <button
+          type="button"
+          onClick={() => setShowAll(true)}
+          className="mt-3 text-xs text-verba-accent hover:underline"
+        >
+          Show all {matching.length} ({matching.length - shown.length} more)
+        </button>
+      )}
     </section>
   );
 }
@@ -445,16 +476,117 @@ const STATUS_LABELS: Record<string, { label: string; className: string }> = {
 
 // ── Overview tab ──────────────────────────────────────────────────────────────
 
+const FILES_SHOWN = 5;
+
+const BAND_TEXT: Record<string, string> = {
+  ABOVE_THRESHOLD: 'Γ is 0.9 or more, the bar for well governed.',
+  PARTIAL_COVERAGE: 'Γ is between 0.5 and 0.9; 0.9 or more counts as well governed.',
+  BELOW_THRESHOLD: 'Γ is below 0.5; 0.9 or more counts as well governed.',
+};
+
+function fixesBySeverity(result: ScanResult): string {
+  return (['critical', 'high', 'medium'] as const)
+    .filter((sev) => result.severity_breakdown[sev])
+    .map((sev) => `${result.severity_breakdown[sev]} ${sev}`)
+    .join(', ');
+}
+
+// One verdict for the whole report, worked out from the same numbers as the
+// Governance Score, so the top of the page can never contradict the score.
+function Verdict({
+  result,
+  breakdown,
+  showUngoverned,
+  openFindings,
+}: {
+  result: ScanResult;
+  breakdown: BreakdownItem[];
+  showUngoverned: () => void;
+  openFindings: () => void;
+}) {
+  const governed = breakdown.filter((i) => i.governed).length;
+  const ungoverned = breakdown.length - governed;
+  const fixes = result.ungoverned_nodes.length;
+  const actions = result.agent_actions?.total;
+  const allClear = result.gamma_status === 'ABOVE_THRESHOLD' && ungoverned === 0 && fixes === 0;
+  const status = STATUS_LABELS[result.gamma_status] ?? STATUS_LABELS.BELOW_THRESHOLD;
+  const border = allClear
+    ? 'border-verba-green/40'
+    : result.gamma_status === 'PARTIAL_COVERAGE'
+      ? 'border-verba-amber/40'
+      : 'border-verba-red/40';
+
+  return (
+    <div className={`mb-6 bg-verba-surface border rounded-2xl p-6 ${border}`}>
+      <h2 className={`font-display text-lg font-semibold mb-2 ${allClear ? 'text-verba-green' : status.className}`}>
+        {allClear ? 'No governance gaps found' : status.label}
+      </h2>
+      <ul className="text-sm text-gray-300 space-y-1">
+        {breakdown.length > 0 ? (
+          <li>
+            <strong className="text-white">{governed} of {breakdown.length}</strong> consequential decision points have a
+            governance check, so the Governance Score is <strong className="text-white">Γ {result.gamma.toFixed(2)}</strong>.{' '}
+            <span className="text-verba-muted">{BAND_TEXT[result.gamma_status] ?? ''}</span>
+          </li>
+        ) : (
+          <li>
+            Governance Score <strong className="text-white">Γ {result.gamma.toFixed(2)}</strong>.{' '}
+            <span className="text-verba-muted">{BAND_TEXT[result.gamma_status] ?? ''}</span>
+          </li>
+        )}
+        {actions && actions.total > 0 && (
+          <li>
+            <strong className={actions.governed === actions.total ? 'text-verba-green' : actions.governed === 0 ? 'text-verba-red' : 'text-verba-amber'}>
+              {actions.governed} of {actions.total}
+            </strong>{' '}
+            actions the agent can take (tools it can call and model calls) are governed.
+          </li>
+        )}
+        {fixes > 0 ? (
+          <li>
+            X-VERBA has <strong className="text-white">{fixes} recommended {fixes === 1 ? 'fix' : 'fixes'}</strong> ({fixesBySeverity(result)}).
+          </li>
+        ) : ungoverned > 0 ? (
+          <li className="text-verba-muted">
+            X-VERBA has no specific fix recommendations for this code, but the {ungoverned} decision points without a check
+            are listed below.
+          </li>
+        ) : null}
+      </ul>
+      {!allClear && (ungoverned > 0 || fixes > 0) && (
+        <div className="flex flex-wrap gap-3 mt-4">
+          {ungoverned > 0 && (
+            <button
+              type="button"
+              onClick={showUngoverned}
+              className="bg-verba-accent hover:bg-verba-accent/90 text-verba-bg px-4 py-2 rounded-lg text-sm font-semibold"
+            >
+              See what isn&apos;t governed ({ungoverned})
+            </button>
+          )}
+          {fixes > 0 && (
+            <button
+              type="button"
+              onClick={openFindings}
+              className="border border-verba-border hover:border-verba-accent text-white px-4 py-2 rounded-lg text-sm"
+            >
+              View recommended fixes ({fixes})
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function OverviewTab({
   result,
   noAi,
-  noFindings,
   navigate,
   openFindings,
 }: {
   result: ScanResult;
   noAi: boolean;
-  noFindings: boolean;
   navigate: ReturnType<typeof useNavigate>;
   openFindings: (filter?: FindingsFilter, sort?: SortKey) => void;
 }) {
@@ -471,7 +603,11 @@ function OverviewTab({
     setView(nextView);
     const id = item ? itemId(item) : 'breakdown';
     setHighlight(item ? id : null);
-    requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+    // One item: centre it. The whole list: start at its heading (centring a
+    // long section would land halfway down the list).
+    requestAnimationFrame(() =>
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: item ? 'center' : 'start' }),
+    );
   };
 
   if (noAi) {
@@ -495,16 +631,12 @@ function OverviewTab({
 
   return (
     <div>
-      {noFindings && (
-        <div className="mb-8 bg-verba-surface border border-verba-green/30 rounded-2xl p-8 text-center">
-          <div className="text-4xl mb-4">&#x2705;</div>
-          <h2 className="font-display text-lg font-semibold text-white mb-2">No Governance Gaps Found</h2>
-          <p className="text-sm text-verba-muted max-w-md mx-auto">
-            Every consequential decision point X-VERBA found has a governance check. Structural Gamma:{' '}
-            <strong className="text-verba-green">{result.gamma.toFixed(2)}</strong>.
-          </p>
-        </div>
-      )}
+      <Verdict
+        result={result}
+        breakdown={breakdown}
+        showUngoverned={() => showItem(null, 'ungoverned')}
+        openFindings={() => openFindings()}
+      />
 
       {/* Score + summary grid */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
@@ -525,36 +657,71 @@ function OverviewTab({
             </button>
           )}
         </div>
-        <button
-          type="button"
-          onMouseMove={spotlight.onMouseMove}
-          onClick={() => openFindings()}
-          disabled={result.ungoverned_nodes.length === 0}
-          className={`text-left bg-verba-surface border border-verba-border rounded-xl p-4 transition-transform enabled:hover:-translate-y-0.5 enabled:hover:border-verba-accent ${spotlight.className}`}
-        >
-          <div className="text-3xl font-bold text-white">{result.ungoverned_nodes.length}</div>
-          <div className="text-sm text-verba-muted">Findings</div>
-          {result.ungoverned_nodes.length > 0 && <div className="text-xs text-verba-accent mt-1">View findings &rarr;</div>}
-        </button>
+        {breakdown.length > 0 ? (
+          <button
+            type="button"
+            onMouseMove={spotlight.onMouseMove}
+            onClick={() => showItem(null, 'ungoverned')}
+            disabled={breakdown.length === governedCount}
+            className={`flex flex-col items-start justify-start text-left bg-verba-surface border border-verba-border rounded-xl p-4 transition-transform enabled:hover:-translate-y-0.5 enabled:hover:border-verba-accent ${spotlight.className}`}
+          >
+            <div className={`text-3xl font-bold ${breakdown.length === governedCount ? 'text-verba-green' : 'text-white'}`}>
+              {breakdown.length - governedCount}
+            </div>
+            <div className="text-sm text-verba-muted">Not governed</div>
+            <div className="text-xs text-verba-muted mt-1">decision points with no governance check</div>
+            {breakdown.length > governedCount && <div className="text-xs text-verba-accent mt-1">See which &rarr;</div>}
+          </button>
+        ) : (
+          <div className="bg-verba-surface border border-verba-border rounded-xl p-4">
+            <div className="text-sm text-verba-muted">Not governed</div>
+            <div className="text-xs text-verba-muted mt-1">
+              Not reported for this scan (needs x-verba 0.7.0 or later).
+            </div>
+          </div>
+        )}
         <div
           onMouseMove={spotlight.onMouseMove}
           className={`bg-verba-surface border border-verba-border rounded-xl p-4 transition-transform hover:-translate-y-0.5 ${spotlight.className}`}
         >
-          <div className="text-3xl font-bold text-white">{result.files_affected}</div>
-          <div className="text-sm text-verba-muted">Files Affected</div>
-          <ul className="mt-1 space-y-0.5">
-            {Array.from(new Set(result.ungoverned_nodes.map((n) => n.file))).map((file) => (
-              <li key={file}>
-                <button
-                  type="button"
-                  onClick={() => openFindings({ file, label: file }, 'file')}
-                  className="text-xs font-mono text-verba-accent hover:underline break-all text-left"
-                >
-                  {file}
-                </button>
-              </li>
-            ))}
-          </ul>
+          <button
+            type="button"
+            onClick={() => openFindings()}
+            disabled={result.ungoverned_nodes.length === 0}
+            className="text-left enabled:hover:underline"
+          >
+            <div className="text-3xl font-bold text-white">{result.ungoverned_nodes.length}</div>
+            <div className="text-sm text-verba-muted">Recommended fixes</div>
+          </button>
+          {result.ungoverned_nodes.length > 0 && (
+            <>
+              <div className="text-xs text-verba-muted mt-1">
+                in {result.files_affected} {result.files_affected === 1 ? 'file' : 'files'}
+              </div>
+              <ul className="mt-1 space-y-0.5">
+                {Array.from(new Set(result.ungoverned_nodes.map((n) => n.file)))
+                  .slice(0, FILES_SHOWN)
+                  .map((file) => (
+                    <li key={file}>
+                      <button
+                        type="button"
+                        onClick={() => openFindings({ file, label: file }, 'file')}
+                        className="text-xs font-mono text-verba-accent hover:underline break-all text-left"
+                      >
+                        {file}
+                      </button>
+                    </li>
+                  ))}
+                {result.files_affected > FILES_SHOWN && (
+                  <li>
+                    <button type="button" onClick={() => openFindings()} className="text-xs text-verba-accent hover:underline">
+                      and {result.files_affected - FILES_SHOWN} more &rarr;
+                    </button>
+                  </li>
+                )}
+              </ul>
+            </>
+          )}
         </div>
         <div
           onMouseMove={spotlight.onMouseMove}
@@ -564,6 +731,9 @@ function OverviewTab({
             {STATUS_LABELS[result.gamma_status]?.label ?? result.gamma_status}
           </div>
           <div className="text-sm text-verba-muted">Governance Status</div>
+          <div className="text-xs text-verba-muted mt-1">
+            From the score: below 0.5 significant gaps, 0.5 to 0.9 partial, 0.9 or more well governed.
+          </div>
         </div>
       </div>
 
@@ -590,7 +760,7 @@ function OverviewTab({
           onMouseMove={spotlight.onMouseMove}
           className={`bg-verba-surface border border-verba-border rounded-xl p-5 ${spotlight.className}`}
         >
-          <h3 className="text-sm font-medium text-white mb-3">Severity</h3>
+          <h3 className="text-sm font-medium text-white mb-3">Recommended fixes by severity</h3>
           <div className="space-y-2">
             {(['critical', 'high', 'medium'] as const).map((sev) => {
               const count = result.severity_breakdown[sev] || 0;
@@ -644,7 +814,7 @@ function OverviewTab({
           onMouseMove={spotlight.onMouseMove}
           className={`bg-verba-surface border border-verba-border rounded-xl p-5 mb-6 ${spotlight.className}`}
         >
-          <h3 className="text-sm font-medium text-white mb-3">Drift Classes Detected</h3>
+          <h3 className="text-sm font-medium text-white mb-3">Recommended fixes by drift class</h3>
           <div className="space-y-2">
             {dcEntries.map(([code, count]) => {
               const node = result.ungoverned_nodes.find((n) => n.drift_class === code);
@@ -675,24 +845,20 @@ function OverviewTab({
         <div className="bg-verba-surface border-2 border-verba-accent/60 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h3 className="text-white font-semibold mb-1">
-              {result.ungoverned_nodes.length} governance {result.ungoverned_nodes.length === 1 ? 'gap' : 'gaps'} found in this repo
+              {result.ungoverned_nodes.length} recommended {result.ungoverned_nodes.length === 1 ? 'fix' : 'fixes'}
               {' '}
-              <span className="text-verba-muted font-normal">
-                ({(['critical', 'high', 'medium'] as const)
-                  .filter((sev) => result.severity_breakdown[sev])
-                  .map((sev) => `${result.severity_breakdown[sev]} ${sev}`)
-                  .join(', ')})
-              </span>
+              <span className="text-verba-muted font-normal">({fixesBySeverity(result)})</span>
             </h3>
             <p className="text-sm text-verba-muted">
-              See how the full Scan API resolves cross-file coverage and tracks these over time.
+              Each comes with a plain-English explanation and a suggested change. Export them as a governance contract
+              to work through.
             </p>
           </div>
           <button
             onClick={() => openFindings()}
             className="bg-verba-accent hover:bg-verba-accent/90 text-verba-bg px-5 py-2.5 rounded-lg transition-all text-sm font-semibold whitespace-nowrap"
           >
-            View findings
+            View recommended fixes
           </button>
         </div>
       )}
@@ -758,7 +924,18 @@ function FindingsTab({
   };
 
   if (result.ungoverned_nodes.length === 0) {
-    return <p className="text-sm text-verba-muted">No ungoverned findings to show.</p>;
+    const ungoverned = (result.breakdown ?? []).filter((i) => !i.governed).length;
+    return (
+      <p className="text-sm text-verba-muted">
+        X-VERBA has no specific fix recommendations for this code.
+        {ungoverned > 0 && (
+          <>
+            {' '}That doesn&apos;t mean it&apos;s fully governed: {ungoverned} decision points have no governance check. See
+            &ldquo;What the Governance Score counts&rdquo; on the Overview tab.
+          </>
+        )}
+      </p>
+    );
   }
 
   return (
@@ -775,10 +952,6 @@ function FindingsTab({
             <div>
               <div className="text-verba-muted text-xs">Pre-Nodes</div>
               <div className="text-white font-mono">{result.pre_nodes_count}</div>
-            </div>
-            <div>
-              <div className="text-verba-muted text-xs">Test cases</div>
-              <div className="text-white font-mono">{result.test_cases_count}</div>
             </div>
           </div>
 

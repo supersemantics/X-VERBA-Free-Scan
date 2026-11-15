@@ -27,7 +27,8 @@ export default function Landing() {
     const featured = FEATURED_SCANS.find((f) => f.slug === slug);
     if (!featured) return;
     setOpeningFeatured(slug);
-    navigate(`/results/${featured.result.scan_id}`, { state: { result: featured.result } });
+    // Only a summary is bundled; the report page fetches the full result.
+    navigate(`/results/${featured.result.scan_id}`);
   };
 
   const handleScan = () => {
@@ -83,11 +84,23 @@ export default function Landing() {
                 <GammaGauge value={result.gamma} size="sm" />
               </div>
               <p className="text-xs text-verba-muted mb-3">{blurb}</p>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="bg-verba-red/20 text-verba-red px-2 py-0.5 rounded-full">
-                  {result.severity_breakdown.critical} critical
-                </span>
-                <span className="text-verba-muted">{result.files_scanned} files scanned</span>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                {result.agent_actions && result.agent_actions.total.total > 0 ? (
+                  <span
+                    className={`px-2 py-0.5 rounded-full ${
+                      result.agent_actions.total.governed === result.agent_actions.total.total
+                        ? 'bg-verba-green/20 text-verba-green'
+                        : 'bg-verba-red/20 text-verba-red'
+                    }`}
+                  >
+                    {result.agent_actions.total.governed}/{result.agent_actions.total.total} agent actions governed
+                  </span>
+                ) : (
+                  <span className="bg-verba-red/20 text-verba-red px-2 py-0.5 rounded-full">
+                    {result.severity_breakdown.critical} critical
+                  </span>
+                )}
+                <span className="text-verba-muted">{result.files_scanned.toLocaleString()} files scanned</span>
               </div>
               {openingFeatured === slug && (
                 <p className="text-xs text-verba-accent mt-2">Loading&hellip;</p>
