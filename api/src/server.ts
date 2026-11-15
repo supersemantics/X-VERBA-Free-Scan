@@ -3,18 +3,29 @@ import cors from 'cors';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runScan } from './scanner.js';
+import { engineVersion, runScan } from './scanner.js';
 import { parseRepoUrl } from './repoUrl.js';
-import { saveScan, getScan, getHistory } from './db.js';
+import { saveScan, getScan, getHistory, loadFeaturedScans } from './db.js';
+import { MESSAGES, ScanError } from './errors.js';
+import { ScanLimiter } from './limits.js';
+import { APP_VERSION } from './version.js';
 
 const app = express();
 const api = express.Router();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 const webDist = fileURLToPath(new URL('../../web/dist/', import.meta.url));
 const webIndex = join(webDist, 'index.html');
+const limiter = new ScanLimiter();
+setInterval(() => limiter.prune(), 60_000).unref();
 
+const featuredCount = loadFeaturedScans(new URL('../../web/src/data/featuredScans.json', import.meta.url));
+
+// Behind Railway's proxy, req.ip must come from X-Forwarded-For, or every
+// visitor would share one rate limit. TRUST_PROXY = number of proxy hops.
+app.set('trust proxy', parseInt(process.env.TRUST_PROXY ?? '1', 10) || false);
+app.disable('x-powered-by');
 app.use(cors());
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '16kb' }));
 
 // Keep the scan UI and its API under /scan when hosted alongside the main site.
 app.use('/api', api);
@@ -22,42 +33,48 @@ app.use('/scan/api', api);
 
 // ── POST /api/scan ───────────────────────────────────────────────────────────
 api.post('/scan', async (req, res) => {
-  const { repo_url } = req.body;
+  const repo_url = req.body?.repo_url;
 
-  if (!repo_url || typeof repo_url !== 'string') {
-    res.status(400).json({ error: 'repo_url is required' });
+  if (!repo_url || typeof repo_url !== 'string' || repo_url.length > 500) {
+    res.status(400).json({ error: 'Paste a GitHub repository link to scan.' });
+    return;
+  }
+  if (!parseRepoUrl(repo_url)) {
+    res.status(400).json({ error: MESSAGES.invalidUrl });
     return;
   }
 
-  // https://github.com/org/repo, optionally …/tree/<branch>
-  if (!parseRepoUrl(repo_url)) {
-    res.status(400).json({ error: 'Invalid GitHub repository URL' });
+  const admission = limiter.admit(req.ip ?? 'unknown');
+  if (!admission.ok) {
+    res.set('Retry-After', String(admission.retryAfterSec));
+    res.status(admission.status).json({ error: admission.message });
     return;
   }
 
   try {
+    await admission.wait;
     const result = await runScan(repo_url);
     saveScan(result);
     res.json(result);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Scan failed';
-    res.status(500).json({ error: message });
+    const scanErr = err instanceof ScanError ? err : new ScanError(500, MESSAGES.generic, String(err));
+    // Full detail stays in the server log; the visitor gets the plain message.
+    console.error(`Scan failed (${scanErr.status}) for ${repo_url}: ${scanErr.publicMessage}\n${scanErr.detail ?? ''}`);
+    res.status(scanErr.status).json({ error: scanErr.publicMessage });
+  } finally {
+    admission.release();
   }
 });
 
-// ── POST /api/scan/register ──────────────────────────────────────────────────
-// Seeds the in-memory store with a scan result computed elsewhere (currently
-// only used for the home page's pre-computed "featured" scans, so their
-// contract export/history still work through the normal endpoints instead of
-// needing a separate code path).
-api.post('/scan/register', (req, res) => {
-  const result = req.body;
-  if (!result || typeof result.scan_id !== 'string' || typeof result.repo_name !== 'string') {
-    res.status(400).json({ error: 'A valid ScanResult body is required' });
+// ── GET /api/scan/:scan_id ───────────────────────────────────────────────────
+// Lets a results link be refreshed or shared while the server still holds it.
+api.get('/scan/:scan_id', (req, res) => {
+  const scan = getScan(req.params.scan_id);
+  if (!scan) {
+    res.status(404).json({ error: 'Scan not found' });
     return;
   }
-  saveScan(result);
-  res.json({ status: 'ok' });
+  res.json(scan);
 });
 
 // ── GET /api/contract/:scan_id?format=yaml|json|txt|md ───────────────────────
@@ -95,8 +112,14 @@ api.get('/scans/:repo', (req, res) => {
 });
 
 // ── Health check ─────────────────────────────────────────────────────────────
-api.get('/health', (_req, res) => {
-  res.json({ status: 'ok', version: '0.1.0' });
+api.get('/health', async (_req, res) => {
+  res.json({
+    status: 'ok',
+    version: APP_VERSION,
+    engine: { name: 'x-verba', version: (await engineVersion()) ?? null },
+    scans: limiter.stats,
+    featured_scans: featuredCount,
+  });
 });
 
 if (existsSync(webIndex)) {
@@ -119,11 +142,18 @@ if (existsSync(webIndex)) {
   });
 }
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`X-VERBA API running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', async () => {
+  console.log(`X-VERBA Free Scan ${APP_VERSION} API running on port ${PORT}`);
+  console.log(`Scan engine: x-verba ${(await engineVersion()) ?? '(not found — set X_VERBA_BIN)'}; featured scans: ${featuredCount}`);
 });
 
 // ── YAML contract generator ──────────────────────────────────────────────────
+
+// A double-quoted YAML scalar. JSON string escaping is valid YAML, so quotes,
+// backslashes and newlines in findings can't break the file.
+function q(value: string): string {
+  return JSON.stringify(value);
+}
 
 function generateContractYaml(scan: ReturnType<typeof getScan>): string {
   if (!scan) return '# No scan data';
@@ -141,10 +171,11 @@ function generateContractYaml(scan: ReturnType<typeof getScan>): string {
     '# ═══════════════════════════════════════════════════════════════',
     '',
     'system_identity:',
-    `  identity_key: "${scan.scan_id}"`,
-    `  system_name: "${scan.repo_name}"`,
-    `  scan_date: "${scan.scan_date}"`,
-    '  verba_version: "0.2.0"',
+    `  identity_key: ${q(scan.scan_id)}`,
+    `  system_name: ${q(scan.repo_name)}`,
+    `  scan_date: ${q(scan.scan_date)}`,
+    `  verba_version: ${scan.engine_version ? q(scan.engine_version) : 'null  # not recorded for this scan'}`,
+    `  free_scan_version: ${scan.app_version ? q(scan.app_version) : 'null'}`,
     '  reviewed: false',
     '  approved: false',
     '',
@@ -161,12 +192,12 @@ function generateContractYaml(scan: ReturnType<typeof getScan>): string {
   ];
 
   for (const node of scan.ungoverned_nodes) {
-    lines.push(`  - id: "${node.drift_class}-${node.line}"`);
-    lines.push(`    location: "${node.file}:${node.line}"`);
-    lines.push(`    drift_class: "${node.drift_class}"`);
-    lines.push(`    severity: "${node.severity}"`);
-    lines.push(`    issue: "${node.issue}"`);
-    lines.push(`    recommendation: "${node.recommendation}"`);
+    lines.push(`  - id: ${q(`${node.drift_class}-${node.line}`)}`);
+    lines.push(`    location: ${q(`${node.file}:${node.line}`)}`);
+    lines.push(`    drift_class: ${q(node.drift_class)}`);
+    lines.push(`    severity: ${q(node.severity)}`);
+    lines.push(`    issue: ${q(node.issue)}`);
+    lines.push(`    recommendation: ${q(node.recommendation)}`);
     lines.push('    pre_node:');
     lines.push('      conditions_for_execution: null  # Fill: what must be TRUE to proceed');
     lines.push('      conditions_to_block: null       # Fill: what must BLOCK execution');
@@ -196,7 +227,8 @@ function generateContractJson(scan: ReturnType<typeof getScan>): string {
         identity_key: scan.scan_id,
         system_name: scan.repo_name,
         scan_date: scan.scan_date,
-        verba_version: '0.2.0',
+        verba_version: scan.engine_version ?? null,
+        free_scan_version: scan.app_version ?? null,
         reviewed: false,
         approved: false,
       },
@@ -240,8 +272,9 @@ function generateContractTxt(scan: ReturnType<typeof getScan>): string {
     'X-VERBA GOVERNANCE REPORT',
     `Repo: ${scan.repo_name}`,
     `Scanned: ${scan.scan_date}`,
+    `Engine: x-verba ${scan.engine_version ?? '(version not recorded)'}`,
     '',
-    `Gamma: ${scan.gamma} (${scan.gamma_status})`,
+    `Gamma:${scan.gamma} (${scan.gamma_status})`,
     `Files scanned: ${scan.files_scanned}  Files affected: ${scan.files_affected}`,
     `Severity: critical=${scan.severity_breakdown.critical || 0} high=${scan.severity_breakdown.high || 0} medium=${scan.severity_breakdown.medium || 0}`,
     '',
@@ -270,7 +303,7 @@ function generateContractMd(scan: ReturnType<typeof getScan>): string {
   const lines: string[] = [
     `# X-VERBA governance report: ${scan.repo_name}`,
     '',
-    `Scanned ${scan.files_scanned} files on ${new Date(scan.scan_date).toLocaleDateString()}.`,
+    `Scanned ${scan.files_scanned} files on ${new Date(scan.scan_date).toLocaleDateString()}${scan.engine_version ? ` with x-verba ${scan.engine_version}` : ''}.`,
     '',
     `**Gamma score: ${scan.gamma}** (${scan.gamma_status})`,
     '',

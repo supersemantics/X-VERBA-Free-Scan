@@ -5,7 +5,7 @@ import FindingCard from '../components/FindingCard';
 import TrendChart from '../components/TrendChart';
 import GlossaryTerm from '../components/GlossaryTerm';
 import { useSpotlight } from '../hooks/useSpotlight';
-import { getContract, getScanHistory } from '../api/client';
+import { getContract, getScan, getScanHistory } from '../api/client';
 import type {
   AgentActions,
   BreakdownItem,
@@ -50,7 +50,27 @@ export default function Results() {
   const { scanId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const result = (location.state as { result?: ScanResult })?.result;
+  const stateResult = (location.state as { result?: ScanResult })?.result;
+  // Opened from a link or refreshed: there's no in-page result, so ask the
+  // server, which keeps recent results until it's redeployed.
+  const [fetched, setFetched] = useState<ScanResult | null>(null);
+  const [loadState, setLoadState] = useState<'idle' | 'loading' | 'missing' | 'error'>(stateResult ? 'idle' : 'loading');
+  useEffect(() => {
+    if (stateResult || !scanId) return;
+    let cancelled = false;
+    setLoadState('loading');
+    getScan(scanId)
+      .then((r) => {
+        if (cancelled) return;
+        setFetched(r);
+        setLoadState(r ? 'idle' : 'missing');
+      })
+      .catch(() => !cancelled && setLoadState('error'));
+    return () => {
+      cancelled = true;
+    };
+  }, [scanId, stateResult]);
+  const result = stateResult ?? fetched ?? undefined;
   const [tab, setTab] = useState<Tab>('overview');
   const [findingsFilter, setFindingsFilter] = useState<FindingsFilter>({});
   const [findingsSort, setFindingsSort] = useState<SortKey>('severity');
@@ -63,9 +83,19 @@ export default function Results() {
   };
 
   if (!result) {
+    if (loadState === 'loading') {
+      return <div className="text-center py-20 text-verba-muted">Loading report…</div>;
+    }
     return (
-      <div className="text-center py-20">
-        <p className="text-verba-muted">No scan data found.</p>
+      <div className="text-center py-20 max-w-md mx-auto">
+        <p className="text-white font-semibold mb-2">
+          {loadState === 'error' ? 'Couldn’t reach Free Scan to load this report.' : 'This report is no longer available.'}
+        </p>
+        <p className="text-sm text-verba-muted">
+          {loadState === 'error'
+            ? 'Check your connection and refresh the page.'
+            : 'Free Scan keeps recent results for a limited time, and clears them when the site is updated. Scan the repository again to get a fresh report, or download the contract next time to keep a copy.'}
+        </p>
         <button onClick={() => navigate('/')} className="mt-4 text-verba-accent hover:underline">
           Start a new scan
         </button>
@@ -86,14 +116,24 @@ export default function Results() {
           <span className="text-white">{result.repo_name}</span>
         </div>
         <h1 className="font-display text-2xl font-bold text-white tracking-tight">X-VERBA Governance Report</h1>
-        {result.branch && (
-          <p className="text-xs text-verba-muted mt-1">
-            Branch <span className="font-mono text-white bg-verba-bg border border-verba-border px-1.5 py-0.5 rounded">{result.branch}</span>
+        {(result.branch || result.subdir) && (
+          <p className="text-xs text-verba-muted mt-1 flex flex-wrap gap-x-3 gap-y-1">
+            {result.branch && (
+              <span>
+                Branch <span className="font-mono text-white bg-verba-bg border border-verba-border px-1.5 py-0.5 rounded">{result.branch}</span>
+              </span>
+            )}
+            {result.subdir && (
+              <span>
+                Folder <span className="font-mono text-white bg-verba-bg border border-verba-border px-1.5 py-0.5 rounded">{result.subdir}/</span>
+              </span>
+            )}
           </p>
         )}
         <p className="text-sm text-verba-muted mt-1">
           Scanned {result.files_scanned} files &middot; {new Date(result.scan_date).toLocaleDateString()}
           {result.scan_duration_ms > 0 && <> &middot; {(result.scan_duration_ms / 1000).toFixed(1)}s</>}
+          {' '}&middot; {result.engine_version ? <>x-verba {result.engine_version}</> : <>engine version not recorded</>}
         </p>
       </div>
 

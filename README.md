@@ -31,7 +31,19 @@ npm run dev         # → http://localhost:5174
 
 Open [http://localhost:5174](http://localhost:5174) — the frontend proxies `/api` requests to the API server automatically (see [`web/vite.config.ts`](./web/vite.config.ts)). Paste a GitHub URL or pick one of the pre-scanned example repos to see a live Gamma (Γ) score and governance report.
 
-To scan a branch other than the default, paste the branch's URL as GitHub shows it: `https://github.com/org/repo/tree/<branch>`. With x-verba 0.7.0 or later, the report also shows how many of the agent's actions (tools it can call, model calls) are governed, and any VSL gates recognised.
+Paste a GitHub link in any of the shapes GitHub gives you:
+
+| You paste | Free Scan scans |
+|---|---|
+| `org/repo`, `github.com/org/repo`, `https://github.com/org/repo(.git)`, `git@github.com:org/repo.git` | the default branch |
+| a link with `?tab=…`, `#readme`, or ending in `/pulls`, `/issues` | the default branch |
+| `…/tree/<branch>` (branch names with `/` work) or `…/tree/<tag>` | that branch or tag |
+| `…/tree/<branch>/<folder>` | just that folder, with links pointing into it |
+| `…/blob/<branch>/<file>` | the file's branch |
+
+Free Scan reads public repositories only. A private or missing repository, an unknown branch or a missing folder each gets a plain message instead of raw `git` output. With x-verba 0.7.0 or later, the report also shows how many of the agent's actions (tools it can call, model calls) are governed, and any VSL gates recognised. Every report and contract records the x-verba version that produced it.
+
+Run the API's tests with `npm test` in `api/`.
 
 If `x-verba` isn't on your `PATH` (e.g. installed into a virtualenv), point the API at it explicitly:
 
@@ -52,7 +64,24 @@ The root [`Dockerfile`](./Dockerfile) builds the API and UI together, installs
 the `x-verba` CLI in an isolated Python environment, and serves the app and API
 at the service root. Create a Railway service from this repository with the
 repository root as its root directory; Railway will use `railway.toml` and the
-Dockerfile. The health check is available at `/api/health`.
+Dockerfile. The health check is available at `/api/health`, and reports the app
+version and the x-verba engine version.
+
+The engine version is pinned in the Dockerfile (`ARG XVERBA_VERSION`), so a new
+x-verba release never changes live results on its own. To upgrade, bump it, test
+locally, and record it in [CHANGELOG.md](./CHANGELOG.md).
+
+Settings for a public deployment (all optional):
+
+| Variable | Default | What it does |
+|---|---|---|
+| `SCAN_RATE_MAX` / `SCAN_RATE_WINDOW_MS` | 8 / 600000 | scans each visitor can start per window (10 min) |
+| `SCAN_MAX_CONCURRENT` / `SCAN_MAX_QUEUED` | 2 / 6 | scans running at once across the site, and how many wait behind them; beyond that, visitors are asked to retry |
+| `MAX_STORED_SCANS` | 500 | results kept in memory for shareable `/results/<id>` links; the oldest go first, and all are cleared on redeploy |
+| `TRUST_PROXY` | 1 | proxy hops in front of the app, so each visitor's IP is read correctly |
+| `X_VERBA_BIN` | `x-verba` | path to the engine |
+
+Each visitor runs one scan at a time.
 
 The frontend can use its own subdomain, such as `https://scan.supersemantics.org`,
 without taking over the main website. Railway custom domains route a hostname

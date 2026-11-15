@@ -98,6 +98,12 @@ export interface ScanResult {
   human_authorisations?: HumanAuthorisation[];
   /** Every decision point behind the Governance Score, governed or not (CLI 0.7.0+). */
   breakdown?: BreakdownItem[];
+  /** Folder scanned, when the link pointed at one (…/tree/<branch>/<folder>). */
+  subdir?: string;
+  /** x-verba engine version that produced this result. */
+  engine_version?: string;
+  /** Free Scan app version that produced this result. */
+  app_version?: string;
 }
 
 export interface ScanHistoryEntry {

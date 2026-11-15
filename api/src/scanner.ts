@@ -1,13 +1,34 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { randomUUID } from 'node:crypto';
-import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { readFile, mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AgentActions, BreakdownItem, HumanAuthorisation, ScanResult, UngovernedNode, VslSummary } from './types.js';
-import { parseRepoUrl } from './repoUrl.js';
+import { buildTarget, parseLsRemote, parseRepoUrl, resolveRef, type ParsedRepo, type RepoTarget } from './repoUrl.js';
+import { MESSAGES, ScanError, gitError, isTimeout } from './errors.js';
+import { APP_VERSION } from './version.js';
 
 const execFileAsync = promisify(execFile);
+
+// Never let git wait for credentials: a private or missing repo must fail
+// fast with "not found", not hang or pop up a credential manager.
+const GIT_ENV = {
+  ...process.env,
+  GIT_TERMINAL_PROMPT: '0',
+  GCM_INTERACTIVE: 'never',
+  GIT_ASKPASS: '',
+  SSH_ASKPASS: '',
+};
+const GIT_NO_CREDENTIALS = ['-c', 'credential.helper=', '-c', 'core.askPass='];
+
+function git(args: string[], timeout: number) {
+  return execFileAsync('git', [...GIT_NO_CREDENTIALS, ...args], {
+    timeout,
+    env: GIT_ENV,
+    maxBuffer: 1024 * 1024 * 16,
+  });
+}
 
 // The real scan engine — github.com/supersemantics/X-verba-CLI (`pip install
 // x-verba`). This API is a thin wrapper around it, not a reimplementation:
@@ -17,6 +38,43 @@ const execFileAsync = promisify(execFile);
 // (e.g. `py -m x_verba.cli` in a venv that hasn't installed the console
 // script entry point).
 const XVERBA_BIN = process.env.X_VERBA_BIN || 'x-verba';
+
+// The engine's own version (`x-verba --version`), read once and recorded on
+// every report so a result always says which engine produced it.
+let engineVersionPromise: Promise<string | undefined> | undefined;
+export function engineVersion(): Promise<string | undefined> {
+  engineVersionPromise ??= execFileAsync(XVERBA_BIN, ['--version'], { timeout: 30000 })
+    .then(({ stdout }) => /version\s+(\S+)/i.exec(stdout)?.[1] ?? (stdout.trim() || undefined))
+    .catch((err) => {
+      console.error('Could not read x-verba version:', err instanceof Error ? err.message : err);
+      engineVersionPromise = undefined; // retry next time
+      return undefined;
+    });
+  return engineVersionPromise;
+}
+
+/** Check the repo is public and work out which branch and folder the link means. */
+export async function resolveTarget(parsed: ParsedRepo): Promise<RepoTarget> {
+  const cloneUrl = buildTarget(parsed).cloneUrl;
+  if (parsed.refSegments.length === 0) {
+    try {
+      await git(['ls-remote', '--', cloneUrl, 'HEAD'], 30000);
+    } catch (err) {
+      throw gitError(err);
+    }
+    return buildTarget(parsed);
+  }
+  let refs: Set<string>;
+  try {
+    const { stdout } = await git(['ls-remote', '--heads', '--tags', '--', cloneUrl], 30000);
+    refs = parseLsRemote(stdout);
+  } catch (err) {
+    throw gitError(err);
+  }
+  const resolved = resolveRef(parsed, refs);
+  if (!resolved) throw new ScanError(404, MESSAGES.branchNotFound(parsed.refSegments.join('/')));
+  return buildTarget(parsed, resolved.branch, resolved.subdir);
+}
 
 // ── Shapes we read out of the CLI's `--format json` report ──────────────────
 // Deliberately partial/loose — we only declare the fields we actually use.
@@ -171,26 +229,43 @@ function mapGapToNode(
 export async function runScan(repoUrl: string): Promise<ScanResult> {
   const startedAt = Date.now();
   const scanId = randomUUID();
-  const target = parseRepoUrl(repoUrl);
-  if (!target) throw new Error('Scan failed: invalid GitHub repository URL');
+  const parsed = parseRepoUrl(repoUrl);
+  if (!parsed) throw new ScanError(400, MESSAGES.invalidUrl);
+  const target = await resolveTarget(parsed);
   const tempDir = await mkdtemp(join(tmpdir(), 'xverba-'));
-  const reportPath = join(tempDir, '.xverba-report.json');
+  const cloneDir = join(tempDir, 'repo');
+  const reportPath = join(tempDir, 'report.json');
 
   try {
-    // Clone the repo (the named branch, if the URL had /tree/<branch>).
+    // Clone the repo (the named branch or tag, if the link had one).
     const branchArgs = target.branch ? ['--branch', target.branch] : [];
-    await execFileAsync('git', ['clone', '--depth', '1', ...branchArgs, '--', target.cloneUrl, tempDir], {
-      timeout: 60000,
-    });
+    try {
+      await git(['clone', '--depth', '1', '--single-branch', ...branchArgs, '--', target.cloneUrl, cloneDir], 90000);
+    } catch (err) {
+      throw gitError(err, target.branch);
+    }
+
+    // A folder link scans just that folder; its report paths are then
+    // relative to it, which sourceBase already accounts for.
+    const scanDir = target.subdir ? join(cloneDir, ...target.subdir.split('/')) : cloneDir;
+    if (target.subdir) {
+      const info = await stat(scanDir).catch(() => undefined);
+      if (!info?.isDirectory()) throw new ScanError(404, MESSAGES.folderNotFound(target.subdir));
+    }
 
     // Run the real X-Verba CLI against the clone. context-profile ai-app
     // (the CLI's own default) matches this tool's story: governance gaps
     // in AI-integrated agent code, not every file op in the repo.
-    await execFileAsync(
-      XVERBA_BIN,
-      ['scan', tempDir, '--format', 'json', '--context-profile', 'ai-app', '-o', reportPath],
-      { timeout: 120000, maxBuffer: 1024 * 1024 * 32 },
-    );
+    try {
+      await execFileAsync(
+        XVERBA_BIN,
+        ['scan', scanDir, '--format', 'json', '--context-profile', 'ai-app', '-o', reportPath],
+        { timeout: 150000, maxBuffer: 1024 * 1024 * 32 },
+      );
+    } catch (err) {
+      const detail = `${(err as { stderr?: string }).stderr ?? ''}\n${err instanceof Error ? err.message : ''}`;
+      throw new ScanError(isTimeout(err) ? 504 : 500, isTimeout(err) ? MESSAGES.timeout : MESSAGES.engine, detail);
+    }
 
     const raw = await readFile(reportPath, 'utf-8');
     const cli: CliScanResult = JSON.parse(raw);
@@ -272,10 +347,13 @@ export async function runScan(repoUrl: string): Promise<ScanResult> {
         file: item.file.replace(/\\/g, '/'),
         source_url: sourceUrl(target.sourceBase, item.file.replace(/\\/g, '/'), item.line),
       })),
+      subdir: target.subdir,
+      engine_version: await engineVersion(),
+      app_version: APP_VERSION,
     };
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    throw new Error(`Scan failed: ${message}`);
+    if (err instanceof ScanError) throw err;
+    throw new ScanError(500, MESSAGES.generic, err instanceof Error ? err.stack : String(err));
   } finally {
     rm(tempDir, { recursive: true, force: true }).catch(() => {});
   }
