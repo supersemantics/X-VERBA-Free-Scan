@@ -54,7 +54,7 @@ export function getHistory(repo: string): ScanHistoryEntry[] {
   return historyStore.get(repo) ?? [];
 }
 
-/** Load the home page's featured scans (web/src/data/featuredScans.json). Returns how many loaded. */
+/** Load the home page's featured scans (api/data/featured-scans.json). Returns how many loaded. */
 export function loadFeaturedScans(path: URL): number {
   try {
     const featured = JSON.parse(readFileSync(path, 'utf-8')) as { result: ScanResult }[];

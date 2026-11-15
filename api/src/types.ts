@@ -80,7 +80,8 @@ export interface ScanResult {
   severity_breakdown: Record<string, number>;
   frameworks_detected: string[];
   contract_size_kb: number;
-  test_cases_count: number;
+  /** @deprecated Was an estimate, not a count; no longer produced (0.4.0). */
+  test_cases_count?: number;
   pre_nodes_count: number;
   stabilisation_operators_count: number;
   scan_date: string;

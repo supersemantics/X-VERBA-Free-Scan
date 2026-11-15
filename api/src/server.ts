@@ -18,7 +18,7 @@ const webIndex = join(webDist, 'index.html');
 const limiter = new ScanLimiter();
 setInterval(() => limiter.prune(), 60_000).unref();
 
-const featuredCount = loadFeaturedScans(new URL('../../web/src/data/featuredScans.json', import.meta.url));
+const featuredCount = loadFeaturedScans(new URL('../data/featured-scans.json', import.meta.url));
 
 // Behind Railway's proxy, req.ip must come from X-Forwarded-For, or every
 // visitor would share one rate limit. TRUST_PROXY = number of proxy hops.
