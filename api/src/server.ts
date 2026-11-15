@@ -3,7 +3,7 @@ import cors from 'cors';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { engineVersion, runScan } from './scanner.js';
+import { USE_LOCAL_CREDENTIALS, engineVersion, runScan } from './scanner.js';
 import { parseRepoUrl } from './repoUrl.js';
 import { saveScan, getScan, getHistory, loadFeaturedScans } from './db.js';
 import { MESSAGES, ScanError } from './errors.js';
@@ -145,6 +145,9 @@ if (existsSync(webIndex)) {
 app.listen(PORT, '0.0.0.0', async () => {
   console.log(`X-VERBA Free Scan ${APP_VERSION} API running on port ${PORT}`);
   console.log(`Scan engine: x-verba ${(await engineVersion()) ?? '(not found — set X_VERBA_BIN)'}; featured scans: ${featuredCount}`);
+  if (USE_LOCAL_CREDENTIALS) {
+    console.log('GIT_USE_LOCAL_CREDENTIALS=1: git may use this machine’s stored GitHub login (private repos). Never enable on a public deployment.');
+  }
 });
 
 // ── YAML contract generator ──────────────────────────────────────────────────

@@ -2,6 +2,12 @@
 
 All notable changes to X-VERBA Free Scan. Versions follow [semantic versioning](https://semver.org/); the API and web packages share one version.
 
+## 0.3.1: scan private repos when running locally
+
+- **Before:** 0.3.0 turned off git's stored credentials everywhere, so a public deployment never waits on a login. That also stopped a locally run Free Scan from scanning private repos the machine's own GitHub login can reach, which used to work.
+- **After:** setting `GIT_USE_LOCAL_CREDENTIALS=1` lets git use the stored login (for example Git Credential Manager) again. git still never prompts. Off by default, so the public site is unchanged, and the API logs a warning at startup when it's on.
+- **Tested:** a private repo scans with the setting on (Γ 0, 0 of 8 actions governed on its test branch) and gets "Repository not found, or it's private" with it off. The 10 API tests pass.
+
 ## 0.3.0: links people paste, plain errors, real versions, limits for a public site
 
 **Engine:** x-verba 0.7.0, now pinned in the Dockerfile.
