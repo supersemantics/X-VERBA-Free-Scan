@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GammaGauge from '../components/GammaGauge';
 import { getRecentScans } from '../lib/recentScans';
-import { registerScan } from '../api/client';
 import { FEATURED_SCANS } from '../data/featuredScans';
 import { useSpotlight } from '../hooks/useSpotlight';
 
@@ -22,31 +21,26 @@ export default function Landing() {
   const recentScans = getRecentScans();
   const spotlight = useSpotlight();
 
-  const openFeatured = async (slug: string) => {
+  // The server loads the same featured results at startup, so export,
+  // history and the shareable link all work without uploading anything.
+  const openFeatured = (slug: string) => {
     const featured = FEATURED_SCANS.find((f) => f.slug === slug);
     if (!featured) return;
     setOpeningFeatured(slug);
-    try {
-      await registerScan(featured.result);
-      navigate(`/results/${featured.result.scan_id}`, { state: { result: featured.result } });
-    } catch {
-      // Registration failed (API unreachable) — still show the cached result;
-      // export/history just won't be able to reach the backend for it.
-      navigate(`/results/${featured.result.scan_id}`, { state: { result: featured.result } });
-    } finally {
-      setOpeningFeatured(null);
-    }
+    navigate(`/results/${featured.result.scan_id}`, { state: { result: featured.result } });
   };
 
   const handleScan = () => {
     const trimmed = repoUrl.trim();
     if (!trimmed) {
-      setError('Enter a GitHub repository URL');
+      setError('Paste a GitHub repository link to scan');
       return;
     }
-    // Basic URL validation
-    if (!trimmed.match(/^https?:\/\/(www\.)?github\.com\/[^/]+\/[^/]+(\/tree\/.+)?\/?$/i) && !trimmed.match(/^[^/]+\/[^/]+$/)) {
-      setError('Enter a valid GitHub URL (e.g. https://github.com/org/repo, or …/tree/<branch> for a branch)');
+    // Light check only: the server understands every shape GitHub links come
+    // in (org/repo, github.com/…, branch, folder and file links) and gives a
+    // precise message when it can't use one.
+    if (!/github\.com[/:]/i.test(trimmed) && !/^[\w.-]+\/[\w.-]+\/?$/.test(trimmed)) {
+      setError('Paste a GitHub link, e.g. https://github.com/org/repo, a branch link (…/tree/<branch>), or just org/repo');
       return;
     }
     setError('');
@@ -110,14 +104,18 @@ export default function Landing() {
           className={`bg-verba-surface border border-verba-border rounded-2xl p-6 ${spotlight.className}`}
         >
           <label className="block text-sm text-verba-muted mb-2">
-            Or paste your own GitHub URL
+            Or paste your own GitHub link
           </label>
           <input
-            type="url"
+            type="text"
+            inputMode="url"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
             value={repoUrl}
             onChange={(e) => { setRepoUrl(e.target.value); setError(''); }}
             onKeyDown={(e) => e.key === 'Enter' && handleScan()}
-            placeholder="https://github.com/org/repo  (or …/tree/<branch>)"
+            placeholder="https://github.com/org/repo  or  org/repo"
             className="w-full bg-verba-bg border border-verba-border rounded-lg px-4 py-3 text-white placeholder-verba-muted/50 focus:outline-none focus:border-verba-accent transition-colors font-mono text-sm"
           />
           {error && (
@@ -129,17 +127,18 @@ export default function Landing() {
           >
             Scan
           </button>
-          <div className="flex items-center gap-3 mt-3">
-            <div className="flex-1 h-px bg-verba-border" />
-            <span className="text-xs text-verba-muted">or</span>
-            <div className="flex-1 h-px bg-verba-border" />
-          </div>
-          <button className="w-full mt-3 border border-verba-border text-verba-muted hover:text-white hover:border-verba-accent py-2.5 rounded-lg transition-all text-sm flex items-center justify-center gap-2">
-            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-            </svg>
-            GitHub OAuth
-          </button>
+          <p className="mt-3 text-xs text-verba-muted text-center">
+            Public GitHub repositories only. No sign-in needed. For private code, run the{' '}
+            <a
+              href="https://github.com/supersemantics/X-verba-CLI"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-verba-accent hover:underline"
+            >
+              x-verba CLI
+            </a>{' '}
+            locally.
+          </p>
         </div>
       </div>
 

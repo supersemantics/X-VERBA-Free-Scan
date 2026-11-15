@@ -1,10 +1,20 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import AmbientBackground from './AmbientBackground';
+import { getHealth } from '../api/client';
 
 const publicAsset = (name: string) => `${import.meta.env.BASE_URL}${name}`;
 
 export default function Layout({ children }: { children: ReactNode }) {
+  // The engine version comes from the running server, so the footer always
+  // names the engine that will actually scan, not the one we built against.
+  const [engine, setEngine] = useState<string | null>(null);
+  useEffect(() => {
+    getHealth()
+      .then((h) => setEngine(h.engine?.version ?? null))
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="relative z-10 min-h-screen flex flex-col">
       <AmbientBackground />
@@ -43,9 +53,14 @@ export default function Layout({ children }: { children: ReactNode }) {
             <Link to="/docs" className="text-sm text-verba-muted hover:text-white transition-colors">
               Docs
             </Link>
-            <button className="text-sm px-4 py-1.5 rounded-lg bg-verba-surface border border-verba-border text-verba-muted hover:text-white hover:border-verba-accent transition-all">
-              Sign In
-            </button>
+            <a
+              href="https://github.com/supersemantics/X-VERBA-Free-Scan"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-verba-muted hover:text-white transition-colors"
+            >
+              GitHub
+            </a>
           </nav>
         </div>
       </header>
@@ -72,7 +87,10 @@ export default function Layout({ children }: { children: ReactNode }) {
             </div>
             <span>supersemantics.org</span>
           </a>
-          <span>v0.2.0</span>
+          <span title="Free Scan app version and the x-verba scan engine it runs">
+            Free Scan v{__APP_VERSION__}
+            {engine && <> &middot; x-verba {engine}</>}
+          </span>
         </div>
       </footer>
     </div>

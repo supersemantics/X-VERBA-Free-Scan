@@ -1,12 +1,13 @@
 {
   "name": "x-verba-api",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "test": "tsx --test src/repoUrl.test.ts src/limits.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

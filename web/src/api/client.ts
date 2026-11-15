@@ -27,14 +27,22 @@ export async function getScanHistory(repo: string): Promise<ScanHistoryEntry[]> 
   return res.json();
 }
 
-// Seeds the server's in-memory store with a pre-computed result (used for
-// the home page's featured scans) so contract export and history behave
-// exactly like a live scan, rather than needing a separate code path.
-export async function registerScan(result: ScanResult): Promise<void> {
-  const res = await fetch(`${API_BASE}/scan/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(result),
-  });
-  if (!res.ok) throw new Error('Failed to register scan');
+/** A stored result by ID, or null if the server no longer has it. */
+export async function getScan(scanId: string): Promise<ScanResult | null> {
+  const res = await fetch(`${API_BASE}/scan/${encodeURIComponent(scanId)}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Failed to load scan (${res.status})`);
+  return res.json();
+}
+
+export interface HealthInfo {
+  status: string;
+  version: string;
+  engine?: { name: string; version: string | null };
+}
+
+export async function getHealth(): Promise<HealthInfo> {
+  const res = await fetch(`${API_BASE}/health`);
+  if (!res.ok) throw new Error('Health check failed');
+  return res.json();
 }
