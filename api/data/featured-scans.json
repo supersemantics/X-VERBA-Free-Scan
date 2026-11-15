@@ -6,35 +6,61 @@
       "scan_id": "e6aeda21-5825-4dde-a6e3-c027ee13f1b8",
       "repo": "https://github.com/TauricResearch/TradingAgents",
       "repo_name": "TradingAgents",
-      "gamma": 0.13,
+      "gamma": 0.05,
       "gamma_status": "BELOW_THRESHOLD",
       "files_scanned": 94,
-      "files_affected": 10,
+      "files_affected": 11,
       "ungoverned_nodes": [
         {
           "file": "tradingagents/llm_clients/chatgpt_auth.py",
           "line": 34,
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/llm_clients/chatgpt_auth.py#L34",
           "code": "API_BASE = \"https://api.openai.com/v1\"",
-          "drift_class": "MISSING_PRE_NODE",
+          "drift_class": "DC-E13",
           "drift_class_name": "Pre-Node gap",
           "severity": "critical",
           "recommendation": "Define what must be checked before this AI call. What conditions must be met? What must the AI never return?",
           "issue": "No checkpoint exists before the AI call at tradingagents/llm_clients/chatgpt_auth.py:34. The AI receives input and produces output with nothing checking whether it should — or what it can return.",
           "provider": "openai",
-          "confidence": "high"
+          "confidence": "medium"
         },
         {
           "file": "tradingagents/llm_clients/chatgpt_auth.py",
           "line": 34,
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/llm_clients/chatgpt_auth.py#L34",
           "code": "API_BASE = \"https://api.openai.com/v1\"",
-          "drift_class": "MISSING_HUMAN_GATE",
+          "drift_class": "DC-E13",
           "drift_class_name": "Human-Authorised Transition missing",
           "severity": "high",
           "recommendation": "Define the severity and required authorisation level for this output.",
           "issue": "AI output flows to 'downstream processing' with no human review detected.",
           "provider": "openai",
+          "confidence": "medium"
+        },
+        {
+          "file": "tradingagents/memory/reflection.py",
+          "line": 63,
+          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/memory/reflection.py#L63",
+          "code": "return self.quick_thinking_llm.invoke(messages).content",
+          "drift_class": "MISSING_PRE_NODE",
+          "drift_class_name": "Pre-Node gap",
+          "severity": "critical",
+          "recommendation": "Define what must be checked before this AI call. What conditions must be met? What must the AI never return?",
+          "issue": "No checkpoint exists before the AI call at tradingagents/memory/reflection.py:63. The AI receives input and produces output with nothing checking whether it should — or what it can return.",
+          "provider": "langchain",
+          "confidence": "high"
+        },
+        {
+          "file": "tradingagents/memory/reflection.py",
+          "line": 63,
+          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/memory/reflection.py#L63",
+          "code": "return self.quick_thinking_llm.invoke(messages).content",
+          "drift_class": "MISSING_HUMAN_GATE",
+          "drift_class_name": "Human-Authorised Transition missing",
+          "severity": "high",
+          "recommendation": "Define the severity and required authorisation level for this output.",
+          "issue": "AI output flows to 'downstream processing' with no human review detected.",
+          "provider": "langchain",
           "confidence": "high"
         },
         {
@@ -286,25 +312,27 @@
         }
       ],
       "drift_class_summary": {
+        "DC-E13": 2,
         "MISSING_PRE_NODE": 1,
         "MISSING_HUMAN_GATE": 1,
         "UNGATED_IRREVERSIBLE_ACTION": 3,
         "INFORMAL_INVARIANT": 16
       },
       "severity_breakdown": {
-        "critical": 4,
-        "high": 1,
+        "critical": 5,
+        "high": 2,
         "medium": 16
       },
       "frameworks_detected": [
         "OpenAI",
+        "LangChain",
         "LangGraph"
       ],
-      "contract_size_kb": 1575.4,
-      "pre_nodes_count": 0,
-      "stabilisation_operators_count": 4,
-      "scan_date": "2026-11-15T06:16:00.015402+00:00",
-      "scan_duration_ms": 4428,
+      "contract_size_kb": 1581.3,
+      "pre_nodes_count": 3,
+      "stabilisation_operators_count": 5,
+      "scan_date": "2026-11-15T07:59:45.010338+00:00",
+      "scan_duration_ms": 4055,
       "agent_actions": {
         "tools": {
           "governed": 0,
@@ -312,15 +340,169 @@
         },
         "model_calls": {
           "governed": 0,
-          "total": 0
+          "total": 11
         },
         "total": {
           "governed": 0,
-          "total": 12
+          "total": 23
         }
       },
       "human_authorisations": [],
       "breakdown": [
+        {
+          "location": "tradingagents/agents/analysts/turn.py:24",
+          "file": "tradingagents/agents/analysts/turn.py",
+          "line": 24,
+          "kind": "model_call",
+          "name": "AI model call (langchain)",
+          "consequence_types": [
+            "model_call"
+          ],
+          "action_location": "tradingagents/agents/analysts/turn.py:24",
+          "governed": false,
+          "checkpoint": null,
+          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/analysts/turn.py#L24"
+        },
+        {
+          "location": "tradingagents/agents/analysts/turn.py:26",
+          "file": "tradingagents/agents/analysts/turn.py",
+          "line": 26,
+          "kind": "model_call",
+          "name": "AI model call (langchain)",
+          "consequence_types": [
+            "model_call"
+          ],
+          "action_location": "tradingagents/agents/analysts/turn.py:26",
+          "governed": false,
+          "checkpoint": null,
+          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/analysts/turn.py#L26"
+        },
+        {
+          "location": "tradingagents/agents/managers/portfolio_manager.py:85",
+          "file": "tradingagents/agents/managers/portfolio_manager.py",
+          "line": 85,
+          "kind": "model_call",
+          "name": "AI model call (langchain)",
+          "consequence_types": [
+            "model_call"
+          ],
+          "action_location": "tradingagents/agents/managers/portfolio_manager.py:85",
+          "governed": false,
+          "checkpoint": null,
+          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/managers/portfolio_manager.py#L85"
+        },
+        {
+          "location": "tradingagents/agents/researchers/bear_researcher.py:53",
+          "file": "tradingagents/agents/researchers/bear_researcher.py",
+          "line": 53,
+          "kind": "model_call",
+          "name": "AI model call (langchain)",
+          "consequence_types": [
+            "model_call"
+          ],
+          "action_location": "tradingagents/agents/researchers/bear_researcher.py:53",
+          "governed": false,
+          "checkpoint": null,
+          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/researchers/bear_researcher.py#L53"
+        },
+        {
+          "location": "tradingagents/agents/researchers/bull_researcher.py:51",
+          "file": "tradingagents/agents/researchers/bull_researcher.py",
+          "line": 51,
+          "kind": "model_call",
+          "name": "AI model call (langchain)",
+          "consequence_types": [
+            "model_call"
+          ],
+          "action_location": "tradingagents/agents/researchers/bull_researcher.py:51",
+          "governed": false,
+          "checkpoint": null,
+          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/researchers/bull_researcher.py#L51"
+        },
+        {
+          "location": "tradingagents/agents/risk_mgmt/aggressive_debator.py:48",
+          "file": "tradingagents/agents/risk_mgmt/aggressive_debator.py",
+          "line": 48,
+          "kind": "model_call",
+          "name": "AI model call (langchain)",
+          "consequence_types": [
+            "model_call"
+          ],
+          "action_location": "tradingagents/agents/risk_mgmt/aggressive_debator.py:48",
+          "governed": false,
+          "checkpoint": null,
+          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/risk_mgmt/aggressive_debator.py#L48"
+        },
+        {
+          "location": "tradingagents/agents/risk_mgmt/conservative_debator.py:48",
+          "file": "tradingagents/agents/risk_mgmt/conservative_debator.py",
+          "line": 48,
+          "kind": "model_call",
+          "name": "AI model call (langchain)",
+          "consequence_types": [
+            "model_call"
+          ],
+          "action_location": "tradingagents/agents/risk_mgmt/conservative_debator.py:48",
+          "governed": false,
+          "checkpoint": null,
+          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/risk_mgmt/conservative_debator.py#L48"
+        },
+        {
+          "location": "tradingagents/agents/risk_mgmt/neutral_debator.py:48",
+          "file": "tradingagents/agents/risk_mgmt/neutral_debator.py",
+          "line": 48,
+          "kind": "model_call",
+          "name": "AI model call (langchain)",
+          "consequence_types": [
+            "model_call"
+          ],
+          "action_location": "tradingagents/agents/risk_mgmt/neutral_debator.py:48",
+          "governed": false,
+          "checkpoint": null,
+          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/risk_mgmt/neutral_debator.py#L48"
+        },
+        {
+          "location": "tradingagents/agents/structured.py:69",
+          "file": "tradingagents/agents/structured.py",
+          "line": 69,
+          "kind": "model_call",
+          "name": "AI model call (langchain)",
+          "consequence_types": [
+            "model_call"
+          ],
+          "action_location": "tradingagents/agents/structured.py:69",
+          "governed": false,
+          "checkpoint": null,
+          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/structured.py#L69"
+        },
+        {
+          "location": "tradingagents/agents/structured.py:95",
+          "file": "tradingagents/agents/structured.py",
+          "line": 95,
+          "kind": "model_call",
+          "name": "AI model call (langchain)",
+          "consequence_types": [
+            "model_call"
+          ],
+          "action_location": "tradingagents/agents/structured.py:95",
+          "governed": false,
+          "checkpoint": null,
+          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/structured.py#L95"
+        },
+        {
+          "location": "tradingagents/memory/reflection.py:63",
+          "file": "tradingagents/memory/reflection.py",
+          "line": 63,
+          "kind": "model_call",
+          "name": "AI model call (langchain)",
+          "consequence_types": [
+            "model_call"
+          ],
+          "action_location": "tradingagents/memory/reflection.py:63",
+          "governed": false,
+          "checkpoint": null,
+          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/memory/reflection.py#L63"
+        },
         {
           "location": "tradingagents/agents/tools.py:19",
           "file": "tradingagents/agents/tools.py",
@@ -332,11 +514,7 @@
           ],
           "action_location": "tradingagents/agents/tools.py:19",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@tool"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/tools.py#L19"
         },
         {
@@ -350,11 +528,7 @@
           ],
           "action_location": "tradingagents/agents/tools.py:42",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@tool"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/tools.py#L42"
         },
         {
@@ -368,11 +542,7 @@
           ],
           "action_location": "tradingagents/agents/tools.py:73",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@tool"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/tools.py#L73"
         },
         {
@@ -386,11 +556,7 @@
           ],
           "action_location": "tradingagents/agents/tools.py:98",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@tool"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/tools.py#L98"
         },
         {
@@ -404,11 +570,7 @@
           ],
           "action_location": "tradingagents/agents/tools.py:115",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@tool"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/tools.py#L115"
         },
         {
@@ -422,11 +584,7 @@
           ],
           "action_location": "tradingagents/agents/tools.py:134",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@tool"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/tools.py#L134"
         },
         {
@@ -440,11 +598,7 @@
           ],
           "action_location": "tradingagents/agents/tools.py:153",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@tool"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/tools.py#L153"
         },
         {
@@ -458,11 +612,7 @@
           ],
           "action_location": "tradingagents/agents/tools.py:172",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@tool"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/tools.py#L172"
         },
         {
@@ -476,11 +626,7 @@
           ],
           "action_location": "tradingagents/agents/tools.py:195",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@tool"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/tools.py#L195"
         },
         {
@@ -494,11 +640,7 @@
           ],
           "action_location": "tradingagents/agents/tools.py:219",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@tool"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/tools.py#L219"
         },
         {
@@ -512,11 +654,7 @@
           ],
           "action_location": "tradingagents/agents/tools.py:233",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@tool"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/tools.py#L233"
         },
         {
@@ -530,11 +668,7 @@
           ],
           "action_location": "tradingagents/agents/tools.py:268",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@tool"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/tools.py#L268"
         },
         {
@@ -796,20 +930,6 @@
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/agents/post_screen.py#L86"
         },
         {
-          "location": "tradingagents/backtest.py:42",
-          "file": "tradingagents/backtest.py",
-          "line": 42,
-          "kind": "conditional_branch",
-          "name": "dates.append(cursor.strftime(\"%Y-%m-%d\"))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/backtest.py:50",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/backtest.py#L42"
-        },
-        {
           "location": "tradingagents/backtest.py:181",
           "file": "tradingagents/backtest.py",
           "line": 181,
@@ -958,20 +1078,6 @@
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/dataflows/net.py#L17"
         },
         {
-          "location": "tradingagents/dataflows/vendors/alpha_vantage/common.py:89",
-          "file": "tradingagents/dataflows/vendors/alpha_vantage/common.py",
-          "line": 89,
-          "kind": "conditional_branch",
-          "name": "api_params.pop(\"entitlement\", None)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/dataflows/vendors/alpha_vantage/common.py:93",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/dataflows/vendors/alpha_vantage/common.py#L89"
-        },
-        {
           "location": "tradingagents/dataflows/vendors/reddit.py:205",
           "file": "tradingagents/dataflows/vendors/reddit.py",
           "line": 205,
@@ -1086,33 +1192,15 @@
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/graph/checkpointer.py#L93"
         },
         {
-          "location": "tradingagents/graph/trading_graph.py:386",
-          "file": "tradingagents/graph/trading_graph.py",
-          "line": 386,
-          "kind": "conditional_branch",
-          "name": "final_state.update(state)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/graph/trading_graph.py:396",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "when the decision had no parseable rating (#1170); guard with"
-          },
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/graph/trading_graph.py#L386"
-        },
-        {
           "location": "tradingagents/graph/trading_graph.py:389",
           "file": "tradingagents/graph/trading_graph.py",
           "line": 389,
           "kind": "loop",
-          "name": "final_state.update(state)",
+          "name": "final_state = self.graph.invoke(graph_input, **args)",
           "consequence_types": [
-            "state_mutation"
+            "agent_invocation"
           ],
-          "action_location": "tradingagents/graph/trading_graph.py:396",
+          "action_location": "tradingagents/graph/trading_graph.py:398",
           "governed": false,
           "checkpoint": {
             "type": "caller_guard",
@@ -1126,11 +1214,11 @@
           "file": "tradingagents/graph/trading_graph.py",
           "line": 390,
           "kind": "loop",
-          "name": "final_state.update(state)",
+          "name": "final_state = self.graph.invoke(graph_input, **args)",
           "consequence_types": [
-            "state_mutation"
+            "agent_invocation"
           ],
-          "action_location": "tradingagents/graph/trading_graph.py:396",
+          "action_location": "tradingagents/graph/trading_graph.py:398",
           "governed": false,
           "checkpoint": {
             "type": "caller_guard",
@@ -1144,11 +1232,11 @@
           "file": "tradingagents/graph/trading_graph.py",
           "line": 392,
           "kind": "conditional_branch",
-          "name": "final_state.update(state)",
+          "name": "final_state = self.graph.invoke(graph_input, **args)",
           "consequence_types": [
-            "state_mutation"
+            "agent_invocation"
           ],
-          "action_location": "tradingagents/graph/trading_graph.py:396",
+          "action_location": "tradingagents/graph/trading_graph.py:398",
           "governed": false,
           "checkpoint": {
             "type": "caller_guard",
@@ -1162,11 +1250,11 @@
           "file": "tradingagents/graph/trading_graph.py",
           "line": 395,
           "kind": "conditional_branch",
-          "name": "final_state.update(state)",
+          "name": "final_state = self.graph.invoke(graph_input, **args)",
           "consequence_types": [
-            "state_mutation"
+            "agent_invocation"
           ],
-          "action_location": "tradingagents/graph/trading_graph.py:396",
+          "action_location": "tradingagents/graph/trading_graph.py:398",
           "governed": false,
           "checkpoint": {
             "type": "caller_guard",
@@ -1248,20 +1336,6 @@
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/llm_clients/chatgpt_auth.py#L314"
         },
         {
-          "location": "tradingagents/llm_clients/openai_client.py:184",
-          "file": "tradingagents/llm_clients/openai_client.py",
-          "line": 184,
-          "kind": "loop",
-          "name": "if kwargs.pop(name, None) is not None:",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/llm_clients/openai_client.py:185",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/llm_clients/openai_client.py#L184"
-        },
-        {
           "location": "tradingagents/memory/log.py:53",
           "file": "tradingagents/memory/log.py",
           "line": 53,
@@ -1296,24 +1370,6 @@
             "evidence": "if self._log_path.exists():"
           },
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/memory/log.py#L54"
-        },
-        {
-          "location": "tradingagents/memory/log.py:116",
-          "file": "tradingagents/memory/log.py",
-          "line": 116,
-          "kind": "conditional_branch",
-          "name": "same.append(e)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/memory/log.py:119",
-          "governed": false,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.6,
-            "evidence": "if not entries:"
-          },
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/memory/log.py#L116"
         },
         {
           "location": "tradingagents/memory/settlement.py:151",
@@ -1408,130 +1464,6 @@
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/memory/settlement.py#L194"
         },
         {
-          "location": "tradingagents/report_html.py:265",
-          "file": "tradingagents/report_html.py",
-          "line": 265,
-          "kind": "loop",
-          "name": "contents.append(f'<li><a href=\"#s{n}\"><span class=\"num\">{escape(numeral)}</span> '",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/report_html.py:271",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/report_html.py#L265"
-        },
-        {
-          "location": "tradingagents/report_html.py:271",
-          "file": "tradingagents/report_html.py",
-          "line": 271,
-          "kind": "function_call",
-          "name": "body.append(f'<section id=\"s{n}\"><h2>{escape(heading)}</h2>')",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/report_html.py:273",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/report_html.py#L271"
-        },
-        {
-          "location": "tradingagents/report_html.py:273",
-          "file": "tradingagents/report_html.py",
-          "line": 273,
-          "kind": "function_call",
-          "name": "body.append(f'<h3 id=\"s{n}-{m}\">{escape(agent)}</h3>\\n{_render_agent_text(md, text)}')",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/report_html.py:275",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/report_html.py#L273"
-        },
-        {
-          "location": "tradingagents/report_html.py:274",
-          "file": "tradingagents/report_html.py",
-          "line": 274,
-          "kind": "loop",
-          "name": "body.append(f'<h3 id=\"s{n}-{m}\">{escape(agent)}</h3>\\n{_render_agent_text(md, text)}')",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/report_html.py:275",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/report_html.py#L274"
-        },
-        {
-          "location": "tradingagents/report_html.py:275",
-          "file": "tradingagents/report_html.py",
-          "line": 275,
-          "kind": "function_call",
-          "name": "body.append(\"</section>\")",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/report_html.py:276",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/report_html.py#L275"
-        },
-        {
-          "location": "tradingagents/backtest.py:44",
-          "file": "tradingagents/backtest.py",
-          "line": 44,
-          "kind": "conditional_branch",
-          "name": "dates.append(cursor.strftime(\"%Y-%m-%d\"))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/backtest.py:50",
-          "governed": true,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.8,
-            "evidence": "if every_n_days < 1:"
-          },
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/backtest.py#L44"
-        },
-        {
-          "location": "tradingagents/backtest.py:49",
-          "file": "tradingagents/backtest.py",
-          "line": 49,
-          "kind": "loop",
-          "name": "dates.append(cursor.strftime(\"%Y-%m-%d\"))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/backtest.py:50",
-          "governed": true,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.8,
-            "evidence": "if end < start:"
-          },
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/backtest.py#L49"
-        },
-        {
-          "location": "tradingagents/dataflows/vendors/alpha_vantage/common.py:91",
-          "file": "tradingagents/dataflows/vendors/alpha_vantage/common.py",
-          "line": 91,
-          "kind": "conditional_branch",
-          "name": "api_params.pop(\"entitlement\", None)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/dataflows/vendors/alpha_vantage/common.py:93",
-          "governed": true,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.8,
-            "evidence": "if entitlement:"
-          },
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/dataflows/vendors/alpha_vantage/common.py#L91"
-        },
-        {
           "location": "tradingagents/graph/trading_graph.py:396",
           "file": "tradingagents/graph/trading_graph.py",
           "line": 396,
@@ -1586,78 +1518,6 @@
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/memory/log.py#L51"
         },
         {
-          "location": "tradingagents/memory/log.py:115",
-          "file": "tradingagents/memory/log.py",
-          "line": 115,
-          "kind": "loop",
-          "name": "same.append(e)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/memory/log.py:119",
-          "governed": true,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.8,
-            "evidence": "if not entries:"
-          },
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/memory/log.py#L115"
-        },
-        {
-          "location": "tradingagents/memory/log.py:118",
-          "file": "tradingagents/memory/log.py",
-          "line": 118,
-          "kind": "conditional_branch",
-          "name": "same.append(e)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/memory/log.py:119",
-          "governed": true,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.8,
-            "evidence": "if len(same) >= n_same and len(cross) >= n_cross:"
-          },
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/memory/log.py#L118"
-        },
-        {
-          "location": "tradingagents/memory/log.py:119",
-          "file": "tradingagents/memory/log.py",
-          "line": 119,
-          "kind": "function_call",
-          "name": "cross.append(e)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/memory/log.py:121",
-          "governed": true,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.8,
-            "evidence": "if e[\"ticker\"] == ticker and len(same) < n_same:"
-          },
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/memory/log.py#L119"
-        },
-        {
-          "location": "tradingagents/memory/log.py:120",
-          "file": "tradingagents/memory/log.py",
-          "line": 120,
-          "kind": "conditional_branch",
-          "name": "cross.append(e)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "tradingagents/memory/log.py:121",
-          "governed": true,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.8,
-            "evidence": "if e[\"ticker\"] == ticker and len(same) < n_same:"
-          },
-          "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/memory/log.py#L120"
-        },
-        {
           "location": "tradingagents/memory/settlement.py:154",
           "file": "tradingagents/memory/settlement.py",
           "line": 154,
@@ -1676,8 +1536,8 @@
           "source_url": "https://github.com/TauricResearch/TradingAgents/blob/HEAD/tradingagents/memory/settlement.py#L154"
         }
       ],
-      "engine_version": "0.7.0",
-      "app_version": "0.4.0"
+      "engine_version": "0.7.1",
+      "app_version": "0.4.1"
     }
   },
   {
@@ -1690,7 +1550,7 @@
       "gamma": 0.22,
       "gamma_status": "BELOW_THRESHOLD",
       "files_scanned": 4981,
-      "files_affected": 159,
+      "files_affected": 162,
       "ungoverned_nodes": [
         {
           "file": "classic/forge/forge/logging/config.py",
@@ -1988,6 +1848,19 @@
           "severity": "high",
           "recommendation": "Define the severity and required authorisation level for this output.",
           "issue": "AI output flows to 'downstream processing' with no human review detected.",
+          "provider": "openai",
+          "confidence": "high"
+        },
+        {
+          "file": "autogpt_platform/backend/backend/copilot/billing_e2e/dream_provider.py",
+          "line": 106,
+          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/billing_e2e/dream_provider.py#L106",
+          "code": ") as client, openai.AsyncOpenAI(",
+          "drift_class": "MISSING_PRE_NODE",
+          "drift_class_name": "Pre-Node gap",
+          "severity": "critical",
+          "recommendation": "Define what must be checked before this AI call. What conditions must be met? What must the AI never return?",
+          "issue": "No checkpoint exists before the AI call at autogpt_platform/backend/backend/copilot/billing_e2e/dream_provider.py:106. The AI receives input and produces output with nothing checking whether it should — or what it can return.",
           "provider": "openai",
           "confidence": "high"
         },
@@ -2417,6 +2290,19 @@
           "severity": "high",
           "recommendation": "Define the severity and required authorisation level for this output.",
           "issue": "AI output flows to 'downstream processing' with no human review detected.",
+          "provider": "openai",
+          "confidence": "high"
+        },
+        {
+          "file": "autogpt_platform/backend/backend/api/features/onboarding_dump/transcription.py",
+          "line": 103,
+          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/api/features/onboarding_dump/transcription.py#L103",
+          "code": "return AsyncOpenAI(api_key=api_key)",
+          "drift_class": "MISSING_PRE_NODE",
+          "drift_class_name": "Pre-Node gap",
+          "severity": "critical",
+          "recommendation": "Define what must be checked before this AI call. What conditions must be met? What must the AI never return?",
+          "issue": "No checkpoint exists before the AI call at autogpt_platform/backend/backend/api/features/onboarding_dump/transcription.py:103. The AI receives input and produces output with nothing checking whether it should — or what it can return.",
           "provider": "openai",
           "confidence": "high"
         },
@@ -2877,6 +2763,19 @@
         },
         {
           "file": "autogpt_platform/backend/backend/data/auth/oauth.py",
+          "line": 788,
+          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/data/auth/oauth.py#L788",
+          "code": "codes = await PrismaOAuthAuthorizationCode.prisma(tx).delete_many(",
+          "drift_class": "UNGATED_IRREVERSIBLE_ACTION",
+          "drift_class_name": "Eligibility Condition missing",
+          "severity": "critical",
+          "recommendation": "Define what must be confirmed before this action executes. Define what happens if conditions are not met.",
+          "issue": "An irreversible action (database_delete) at line 788 in an AI-adjacent file has no authorisation gate. Once executed, it cannot be undone.",
+          "provider": "",
+          "confidence": "high"
+        },
+        {
+          "file": "autogpt_platform/backend/backend/data/auth/oauth.py",
           "line": 913,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/data/auth/oauth.py#L913",
           "code": "return OAuthApplicationInfo.from_db(updated_app) if updated_app else None",
@@ -2976,6 +2875,32 @@
           "severity": "critical",
           "recommendation": "Define what must be confirmed before this action executes. Define what happens if conditions are not met.",
           "issue": "An irreversible action (database_write) at line 1596 in an AI-adjacent file has no authorisation gate. Once executed, it cannot be undone.",
+          "provider": "",
+          "confidence": "high"
+        },
+        {
+          "file": "autogpt_platform/backend/backend/copilot/turn_queue.py",
+          "line": 18,
+          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/turn_queue.py#L18",
+          "code": "State transitions live in :func:`backend.copilot.db.update_chat_session_status`:",
+          "drift_class": "UNGATED_IRREVERSIBLE_ACTION",
+          "drift_class_name": "Eligibility Condition missing",
+          "severity": "critical",
+          "recommendation": "Define what must be confirmed before this action executes. Define what happens if conditions are not met.",
+          "issue": "An irreversible action (database_write) at line 18 in an AI-adjacent file has no authorisation gate. Once executed, it cannot be undone.",
+          "provider": "",
+          "confidence": "high"
+        },
+        {
+          "file": "autogpt_platform/backend/backend/copilot/turn_queue.py",
+          "line": 233,
+          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/turn_queue.py#L233",
+          "code": "AND session-ownership check upstream — once the row is committed",
+          "drift_class": "UNGATED_IRREVERSIBLE_ACTION",
+          "drift_class_name": "Eligibility Condition missing",
+          "severity": "critical",
+          "recommendation": "Define what must be confirmed before this action executes. Define what happens if conditions are not met.",
+          "issue": "An irreversible action (database_write) at line 233 in an AI-adjacent file has no authorisation gate. Once executed, it cannot be undone.",
           "provider": "",
           "confidence": "high"
         },
@@ -3500,6 +3425,32 @@
           "confidence": "high"
         },
         {
+          "file": "autogpt_platform/backend/backend/cli/oauth_tool.py",
+          "line": 868,
+          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/cli/oauth_tool.py#L868",
+          "code": "deleted_codes = await OAuthAuthorizationCode.prisma().delete_many(",
+          "drift_class": "UNGATED_IRREVERSIBLE_ACTION",
+          "drift_class_name": "Eligibility Condition missing",
+          "severity": "critical",
+          "recommendation": "Define what must be confirmed before this action executes. Define what happens if conditions are not met.",
+          "issue": "An irreversible action (database_delete) at line 868 in an AI-adjacent file has no authorisation gate. Once executed, it cannot be undone.",
+          "provider": "",
+          "confidence": "high"
+        },
+        {
+          "file": "autogpt_platform/backend/backend/cli/oauth_tool.py",
+          "line": 194,
+          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/cli/oauth_tool.py#L194",
+          "code": "-- ⚠️ Never commit it to version control.",
+          "drift_class": "UNGATED_IRREVERSIBLE_ACTION",
+          "drift_class_name": "Eligibility Condition missing",
+          "severity": "critical",
+          "recommendation": "Define what must be confirmed before this action executes. Define what happens if conditions are not met.",
+          "issue": "An irreversible action (database_write) at line 194 in an AI-adjacent file has no authorisation gate. Once executed, it cannot be undone.",
+          "provider": "",
+          "confidence": "high"
+        },
+        {
           "file": "autogpt_platform/backend/backend/cli/test.py",
           "line": 146,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/cli/test.py#L146",
@@ -3743,6 +3694,19 @@
           "severity": "critical",
           "recommendation": "Define what must be confirmed before this action executes. Define what happens if conditions are not met.",
           "issue": "An irreversible action (database_delete) at line 462 in an AI-adjacent file has no authorisation gate. Once executed, it cannot be undone.",
+          "provider": "",
+          "confidence": "high"
+        },
+        {
+          "file": "autogpt_platform/backend/backend/api/features/experts/experts_db.py",
+          "line": 1963,
+          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/api/features/experts/experts_db.py#L1963",
+          "code": "committed, so a read-back that comes up empty must not be reported as a",
+          "drift_class": "UNGATED_IRREVERSIBLE_ACTION",
+          "drift_class_name": "Eligibility Condition missing",
+          "severity": "critical",
+          "recommendation": "Define what must be confirmed before this action executes. Define what happens if conditions are not met.",
+          "issue": "An irreversible action (database_write) at line 1963 in an AI-adjacent file has no authorisation gate. Once executed, it cannot be undone.",
           "provider": "",
           "confidence": "high"
         },
@@ -8012,24 +7976,24 @@
         }
       ],
       "drift_class_summary": {
-        "MISSING_PRE_NODE": 17,
+        "MISSING_PRE_NODE": 19,
         "MISSING_HUMAN_GATE": 48,
-        "UNGATED_IRREVERSIBLE_ACTION": 118,
+        "UNGATED_IRREVERSIBLE_ACTION": 124,
         "INFORMAL_INVARIANT": 303
       },
       "severity_breakdown": {
-        "critical": 135,
+        "critical": 143,
         "high": 48,
         "medium": 303
       },
       "frameworks_detected": [
         "OpenAI"
       ],
-      "contract_size_kb": 68687.8,
-      "pre_nodes_count": 40,
+      "contract_size_kb": 68360.9,
+      "pre_nodes_count": 36,
       "stabilisation_operators_count": 4,
-      "scan_date": "2026-11-15T06:16:25.991682+00:00",
-      "scan_duration_ms": 161000,
+      "scan_date": "2026-11-15T08:00:09.837915+00:00",
+      "scan_duration_ms": 161670,
       "agent_actions": {
         "tools": {
           "governed": 0,
@@ -8928,7 +8892,7 @@
           "checkpoint": {
             "type": "caller_guard",
             "strength": 0.6,
-            "evidence": "if __name__ == \"__main__\":"
+            "evidence": "if args.shard == \"data\":"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/.github/scripts/backend_test_shard.py#L36"
         },
@@ -9779,11 +9743,7 @@
           ],
           "action_location": ".github/scripts/run_command_junit.py:74",
           "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if __name__ == \"__main__\":"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/.github/scripts/run_command_junit.py#L73"
         },
         {
@@ -9797,11 +9757,7 @@
           ],
           "action_location": ".github/scripts/run_unittest_junit.py:188",
           "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "\"\"\"Reject omitted tests unless an exact skip ID is explicitly allowlisted.\"\"\""
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/.github/scripts/run_unittest_junit.py#L187"
         },
         {
@@ -9914,7 +9870,7 @@
           "checkpoint": {
             "type": "caller_guard",
             "strength": 0.6,
-            "evidence": "if sys.version_info < (3, 11):"
+            "evidence": "if len(sys.argv) not in (2, 3):"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/.github/workflows/scripts/get_package_version_from_lockfile.py#L13"
         },
@@ -9932,7 +9888,7 @@
           "checkpoint": {
             "type": "caller_guard",
             "strength": 0.6,
-            "evidence": "if sys.version_info < (3, 11):"
+            "evidence": "if len(sys.argv) not in (2, 3):"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/.github/workflows/scripts/get_package_version_from_lockfile.py#L14"
         },
@@ -10128,9 +10084,9 @@
           "action_location": "autogpt_platform/autogpt_libs/autogpt_libs/utils/synchronize.py:45",
           "governed": false,
           "checkpoint": {
-            "type": "decorator",
+            "type": "caller_guard",
             "strength": 0.6,
-            "evidence": "@asynccontextmanager"
+            "evidence": "if ("
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/autogpt_libs/autogpt_libs/utils/synchronize.py#L44"
         },
@@ -10419,11 +10375,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/api/external/v2/global_rate_limit.py:231",
           "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if state is None:"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/api/external/v2/global_rate_limit.py#L227"
         },
         {
@@ -11818,7 +11770,7 @@
           "checkpoint": {
             "type": "legacy_keyword",
             "strength": 0.4,
-            "evidence": "Copy an approved version's media and its creator's avatar to the public site"
+            "evidence": "assert version.StoreListing is not None"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/api/features/store/db.py#L1751"
         },
@@ -12448,7 +12400,7 @@
           "checkpoint": {
             "type": "legacy_keyword",
             "strength": 0.4,
-            "evidence": "\"\"\"Approve or reject a pending submission."
+            "evidence": "prisma.enums.SubmissionStatus.APPROVED"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/api/features/store/skill_submission_db.py#L216"
         },
@@ -13017,62 +12969,6 @@
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/blocks/conductor/get_workspace.py#L164"
         },
         {
-          "location": "autogpt_platform/backend/backend/blocks/data_manipulation.py:288",
-          "file": "autogpt_platform/backend/backend/blocks/data_manipulation.py",
-          "line": 288,
-          "kind": "try_except",
-          "name": "removed_value = updated_dict.pop(input_data.key)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/blocks/data_manipulation.py:289",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/blocks/data_manipulation.py#L288"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/blocks/data_manipulation.py:522",
-          "file": "autogpt_platform/backend/backend/blocks/data_manipulation.py",
-          "line": 522,
-          "kind": "conditional_branch",
-          "name": "entries_added.append(input_data.entry)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/blocks/data_manipulation.py:523",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/blocks/data_manipulation.py#L522"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/blocks/data_manipulation.py:652",
-          "file": "autogpt_platform/backend/backend/blocks/data_manipulation.py",
-          "line": 652,
-          "kind": "try_except",
-          "name": "removed = lst.pop(input_data.index)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/blocks/data_manipulation.py:654",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/blocks/data_manipulation.py#L652"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/blocks/data_manipulation.py:653",
-          "file": "autogpt_platform/backend/backend/blocks/data_manipulation.py",
-          "line": 653,
-          "kind": "conditional_branch",
-          "name": "removed = lst.pop(input_data.index)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/blocks/data_manipulation.py:654",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/blocks/data_manipulation.py#L653"
-        },
-        {
           "location": "autogpt_platform/backend/backend/blocks/data_manipulation.py:800",
           "file": "autogpt_platform/backend/backend/blocks/data_manipulation.py",
           "line": 800,
@@ -13363,24 +13259,6 @@
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/blocks/exa/_exa_rest.py#L109"
         },
         {
-          "location": "autogpt_platform/backend/backend/blocks/exa/content_settings.py:133",
-          "file": "autogpt_platform/backend/backend/blocks/exa/content_settings.py",
-          "line": 133,
-          "kind": "conditional_branch",
-          "name": "data[\"output_schema\"] = data.pop(\"schema\")",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/blocks/exa/content_settings.py:135",
-          "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@model_validator(mode=\"before\")"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/blocks/exa/content_settings.py#L133"
-        },
-        {
           "location": "autogpt_platform/backend/backend/blocks/exa/contents.py:262",
           "file": "autogpt_platform/backend/backend/blocks/exa/contents.py",
           "line": 262,
@@ -13465,24 +13343,6 @@
             "evidence": "if not input_data.include_enrichments:"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/blocks/exa/websets_import_export.py#L664"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/blocks/github/commits.py:369",
-          "file": "autogpt_platform/backend/backend/blocks/github/commits.py",
-          "line": 369,
-          "kind": "conditional_branch",
-          "name": "tree_entries.append(",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/blocks/github/commits.py:378",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if upsert_files:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/blocks/github/commits.py#L369"
         },
         {
           "location": "autogpt_platform/backend/backend/blocks/github/commits.py:377",
@@ -15145,11 +15005,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/cli/main.py:55",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@main.command()"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/cli/main.py#L50"
         },
         {
@@ -15177,11 +15033,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/cli/main.py:99",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@main.command()"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/cli/main.py#L95"
         },
         {
@@ -15237,11 +15089,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/cli/store.py:83",
           "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if limit is not None:"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/cli/store.py#L77"
         },
         {
@@ -15255,11 +15103,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/cli/store.py:83",
           "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if limit is not None:"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/cli/store.py#L82"
         },
         {
@@ -15287,11 +15131,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/cli/store.py:95",
           "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if limit is not None:"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/cli/store.py#L90"
         },
         {
@@ -15305,11 +15145,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/cli/store.py:95",
           "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if limit is not None:"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/cli/store.py#L94"
         },
         {
@@ -15407,11 +15243,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/copilot/at_reset_lock.py:58",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@asynccontextmanager"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/at_reset_lock.py#L48"
         },
         {
@@ -16188,7 +16020,7 @@
           "checkpoint": {
             "type": "legacy_keyword",
             "strength": 0.4,
-            "evidence": "\"\"\"Render allowlisted ``@DisplayName`` as Discord ``<@id>`` markup and"
+            "evidence": "allowlisted = {token_id for _, token_id in mentionable_users}"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/bot/adapters/discord/adapter.py#L1302"
         },
@@ -16206,7 +16038,7 @@
           "checkpoint": {
             "type": "legacy_keyword",
             "strength": 0.4,
-            "evidence": "\"\"\"Render allowlisted ``@DisplayName`` as Discord ``<@id>`` markup and"
+            "evidence": "allowlisted = {token_id for _, token_id in mentionable_users}"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/bot/adapters/discord/adapter.py#L1303"
         },
@@ -16224,7 +16056,7 @@
           "checkpoint": {
             "type": "legacy_keyword",
             "strength": 0.4,
-            "evidence": "\"\"\"Render allowlisted ``@DisplayName`` as Discord ``<@id>`` markup and"
+            "evidence": "allowlisted = {token_id for _, token_id in mentionable_users}"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/bot/adapters/discord/adapter.py#L1306"
         },
@@ -16242,7 +16074,7 @@
           "checkpoint": {
             "type": "legacy_keyword",
             "strength": 0.4,
-            "evidence": "\"\"\"Render allowlisted ``@DisplayName`` as Discord ``<@id>`` markup and"
+            "evidence": "allowlisted = {token_id for _, token_id in mentionable_users}"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/bot/adapters/discord/adapter.py#L1310"
         },
@@ -16415,24 +16247,6 @@
             "evidence": "if client is None:"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/bot/adapters/slack/adapter.py#L748"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/bot/adapters/slack/history.py:195",
-          "file": "autogpt_platform/backend/backend/copilot/bot/adapters/slack/history.py",
-          "line": 195,
-          "kind": "function_call",
-          "name": "tail.extend(messages)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/bot/adapters/slack/history.py:200",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if not bot_user_id:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/bot/adapters/slack/history.py#L195"
         },
         {
           "location": "autogpt_platform/backend/backend/copilot/bot/adapters/teams/adapter.py:756",
@@ -16793,120 +16607,6 @@
             "evidence": "if mcp_first:"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/capabilities/ordering.py#L47"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/capabilities/sources/blocks.py:64",
-          "file": "autogpt_platform/backend/backend/copilot/capabilities/sources/blocks.py",
-          "line": 64,
-          "kind": "conditional_branch",
-          "name": "tags.append(provider)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/capabilities/sources/blocks.py:65",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if include_disabled or not block.disabled:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/capabilities/sources/blocks.py#L64"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/capabilities/sources/blocks.py:66",
-          "file": "autogpt_platform/backend/backend/copilot/capabilities/sources/blocks.py",
-          "line": 66,
-          "kind": "conditional_branch",
-          "name": "tags.append(\"primitive\")",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/capabilities/sources/blocks.py:67",
-          "governed": false,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.6,
-            "evidence": "if provider:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/capabilities/sources/blocks.py#L66"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py:50",
-          "file": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py",
-          "line": 50,
-          "kind": "conditional_branch",
-          "name": "tags.append(brand)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py:51",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py#L50"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py:52",
-          "file": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py",
-          "line": 52,
-          "kind": "conditional_branch",
-          "name": "tags.append(host)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py:53",
-          "governed": false,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.6,
-            "evidence": "if brand:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py#L52"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py:54",
-          "file": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py",
-          "line": 54,
-          "kind": "conditional_branch",
-          "name": "tags.append(preset.display_name.strip().lower())",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py:55",
-          "governed": false,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.6,
-            "evidence": "if host:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py#L54"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/capabilities/sources/skills.py:49",
-          "file": "autogpt_platform/backend/backend/copilot/capabilities/sources/skills.py",
-          "line": 49,
-          "kind": "conditional_branch",
-          "name": "tags.append(\"skill\")",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/capabilities/sources/skills.py:52",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/capabilities/sources/skills.py#L49"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/capabilities/sources/static_tools.py:94",
-          "file": "autogpt_platform/backend/backend/copilot/capabilities/sources/static_tools.py",
-          "line": 94,
-          "kind": "conditional_branch",
-          "name": "tags.append(group)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/capabilities/sources/static_tools.py:95",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/capabilities/sources/static_tools.py#L94"
         },
         {
           "location": "autogpt_platform/backend/backend/copilot/db.py:460",
@@ -17779,48 +17479,6 @@
           "governed": false,
           "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/first_turn_memory_backfill.py#L148"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/gate/content.py:230",
-          "file": "autogpt_platform/backend/backend/copilot/gate/content.py",
-          "line": 230,
-          "kind": "loop",
-          "name": "chunks.append(text[start:low])",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/gate/content.py:239",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/gate/content.py#L230"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/gate/content.py:233",
-          "file": "autogpt_platform/backend/backend/copilot/gate/content.py",
-          "line": 233,
-          "kind": "loop",
-          "name": "chunks.append(text[start:low])",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/gate/content.py:239",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/gate/content.py#L233"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/gate/content.py:235",
-          "file": "autogpt_platform/backend/backend/copilot/gate/content.py",
-          "line": 235,
-          "kind": "conditional_branch",
-          "name": "chunks.append(text[start:low])",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/gate/content.py:239",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/gate/content.py#L235"
         },
         {
           "location": "autogpt_platform/backend/backend/copilot/gate/executed_files.py:147",
@@ -18969,11 +18627,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/copilot/graphiti/scope_lock.py:107",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@asynccontextmanager"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/graphiti/scope_lock.py#L99"
         },
         {
@@ -19741,11 +19395,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/copilot/model.py:2110",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@asynccontextmanager"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/model.py#L2108"
         },
         {
@@ -21087,11 +20737,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/copilot/sdk/response_adapter.py:1018",
           "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "window can flush mid-block (threshold hit) without closing the"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/sdk/response_adapter.py#L1016"
         },
         {
@@ -21229,11 +20875,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/copilot/sdk/service.py:2993",
           "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "Security: *cwd* MUST be created by `_make_sdk_cwd()` which sanitizes"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/sdk/service.py#L2989"
         },
         {
@@ -21805,11 +21447,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/copilot/sdk/tool_display.py:58",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@contextmanager"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/sdk/tool_display.py#L55"
         },
         {
@@ -21823,11 +21461,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/copilot/sdk/tool_display.py:58",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@contextmanager"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/sdk/tool_display.py#L56"
         },
         {
@@ -22359,24 +21993,6 @@
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/agent_search.py#L271"
         },
         {
-          "location": "autogpt_platform/backend/backend/copilot/tools/agent_search.py:287",
-          "file": "autogpt_platform/backend/backend/copilot/tools/agent_search.py",
-          "line": 287,
-          "kind": "conditional_branch",
-          "name": "asyncio.gather(*[_fetch(a) for a in fetchable]),",
-          "consequence_types": [
-            "external_api_call"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/agent_search.py:295",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if not fetchable:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/agent_search.py#L287"
-        },
-        {
           "location": "autogpt_platform/backend/backend/copilot/tools/agent_search.py:293",
           "file": "autogpt_platform/backend/backend/copilot/tools/agent_search.py",
           "line": 293,
@@ -22519,146 +22135,6 @@
             "evidence": "if not isinstance(data, (dict, list)):"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/base.py#L247"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/base.py:290",
-          "file": "autogpt_platform/backend/backend/copilot/tools/base.py",
-          "line": 290,
-          "kind": "ternary",
-          "name": "queue.append((child, value))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/base.py:300",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if len(tight) >= budget // 2:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/base.py#L290"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/base.py:291",
-          "file": "autogpt_platform/backend/backend/copilot/tools/base.py",
-          "line": 291,
-          "kind": "ternary",
-          "name": "queue.append((child, value))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/base.py:300",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if len(tight) >= budget // 2:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/base.py#L291"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/base.py:292",
-          "file": "autogpt_platform/backend/backend/copilot/tools/base.py",
-          "line": 292,
-          "kind": "conditional_branch",
-          "name": "queue.append((child, value))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/base.py:300",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if len(tight) >= budget // 2:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/base.py#L292"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/base.py:294",
-          "file": "autogpt_platform/backend/backend/copilot/tools/base.py",
-          "line": 294,
-          "kind": "ternary",
-          "name": "queue.append((child, value))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/base.py:300",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if len(tight) >= budget // 2:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/base.py#L294"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/base.py:296",
-          "file": "autogpt_platform/backend/backend/copilot/tools/base.py",
-          "line": 296,
-          "kind": "ternary",
-          "name": "queue.append((child, value))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/base.py:300",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if len(tight) >= budget // 2:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/base.py#L296"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/base.py:297",
-          "file": "autogpt_platform/backend/backend/copilot/tools/base.py",
-          "line": 297,
-          "kind": "function_call",
-          "name": "queue.append((child, value))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/base.py:300",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if len(tight) >= budget // 2:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/base.py#L297"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/base.py:590",
-          "file": "autogpt_platform/backend/backend/copilot/tools/base.py",
-          "line": 590,
-          "kind": "function_call",
-          "name": "kwargs.pop(GATE_DECIDED, None)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/base.py:591",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/base.py#L590"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/base.py:591",
-          "file": "autogpt_platform/backend/backend/copilot/tools/base.py",
-          "line": 591,
-          "kind": "function_call",
-          "name": "kwargs.pop(ARGS_BOUND, None)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/base.py:592",
-          "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "kwargs.pop(GATE_APPROVED, None)"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/base.py#L591"
         },
         {
           "location": "autogpt_platform/backend/backend/copilot/tools/e2b_sandbox.py:1365",
@@ -22837,11 +22313,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/copilot/tools/helpers.py:1273",
           "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "user_id: Authenticated user ID."
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/helpers.py#L1271"
         },
         {
@@ -22855,66 +22327,8 @@
           ],
           "action_location": "autogpt_platform/backend/backend/copilot/tools/helpers.py:1273",
           "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "user_id: Authenticated user ID."
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/helpers.py#L1272"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/run_agent.py:371",
-          "file": "autogpt_platform/backend/backend/copilot/tools/run_agent.py",
-          "line": 371,
-          "kind": "function_call",
-          "name": "kwargs.pop(GATE_DECIDED, None)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/run_agent.py:374",
-          "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "validators defined in the Pydantic model."
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/run_agent.py#L371"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/run_capability.py:218",
-          "file": "autogpt_platform/backend/backend/copilot/tools/run_capability.py",
-          "line": 218,
-          "kind": "function_call",
-          "name": "decided = bool(kwargs.pop(GATE_DECIDED, False))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/run_capability.py:219",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if validate_only:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/run_capability.py#L218"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/run_capability.py:219",
-          "file": "autogpt_platform/backend/backend/copilot/tools/run_capability.py",
-          "line": 219,
-          "kind": "function_call",
-          "name": "bound = bool(kwargs.pop(ARGS_BOUND, False))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/run_capability.py:220",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if validate_only:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/run_capability.py#L219"
         },
         {
           "location": "autogpt_platform/backend/backend/copilot/tools/run_capability.py:298",
@@ -22977,11 +22391,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/copilot/tools/skills.py:2935",
           "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "mistake a partial index for a confirmed removal of owner skills."
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/skills.py#L2929"
         },
         {
@@ -23275,48 +22685,6 @@
           "governed": false,
           "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/workspace_files.py#L597"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/workspace_files.py:604",
-          "file": "autogpt_platform/backend/backend/copilot/tools/workspace_files.py",
-          "line": 604,
-          "kind": "loop",
-          "name": "queue.append(child)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/workspace_files.py:609",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/workspace_files.py#L604"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/workspace_files.py:605",
-          "file": "autogpt_platform/backend/backend/copilot/tools/workspace_files.py",
-          "line": 605,
-          "kind": "loop",
-          "name": "queue.append(child)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/workspace_files.py:609",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/workspace_files.py#L605"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/workspace_files.py:606",
-          "file": "autogpt_platform/backend/backend/copilot/tools/workspace_files.py",
-          "line": 606,
-          "kind": "conditional_branch",
-          "name": "queue.append(child)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/workspace_files.py:609",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/workspace_files.py#L606"
         },
         {
           "location": "autogpt_platform/backend/backend/copilot/transcript.py:588",
@@ -23689,11 +23057,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/data/account_deletion.py:77",
           "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "ones too so they can't be approved later, and the erasure removes them"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/data/account_deletion.py#L67"
         },
         {
@@ -24040,9 +23404,9 @@
           "action_location": "autogpt_platform/backend/backend/data/block.py:51",
           "governed": false,
           "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@func_retry"
+            "type": "legacy_keyword",
+            "strength": 0.4,
+            "evidence": "inputSchema=json.dumps(block.input_schema.jsonschema()),"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/data/block.py#L44"
         },
@@ -24343,11 +23707,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/data/execution.py:1778",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@func_retry"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/data/execution.py#L1771"
         },
         {
@@ -24569,34 +23929,6 @@
             "evidence": "if source is not None and source.is_enabled:"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/data/llm_registry/retire.py#L122"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/data/model.py:910",
-          "file": "autogpt_platform/backend/backend/data/model.py",
-          "line": 910,
-          "kind": "function_call",
-          "name": "extra_schema = kwargs.pop(\"json_schema_extra\")",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/data/model.py:917",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/data/model.py#L910"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/data/model.py:916",
-          "file": "autogpt_platform/backend/backend/data/model.py",
-          "line": 916,
-          "kind": "conditional_branch",
-          "name": "extra_schema = kwargs.pop(\"json_schema_extra\")",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/data/model.py:917",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/data/model.py#L916"
         },
         {
           "location": "autogpt_platform/backend/backend/data/model.py:1103",
@@ -24929,11 +24261,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/data/rabbitmq.py:288",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@func_retry"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/data/rabbitmq.py#L282"
         },
         {
@@ -24961,11 +24289,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/data/redis_client.py:220",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@conn_retry(\"AsyncRedis\", \"Releasing connection\")"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/data/redis_client.py#L219"
         },
         {
@@ -25377,11 +24701,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/data/subscription_activation_attempt.py:65",
           "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "WHERE \"ProActivationAttempt\".\"confirmedAt\" IS NULL"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/data/subscription_activation_attempt.py#L58"
         },
         {
@@ -26549,11 +25869,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/executor/manager.py:2358",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@func_retry"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/executor/manager.py#L2353"
         },
         {
@@ -26711,11 +26027,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/executor/manager.py:2732",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@func_retry"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/executor/manager.py#L2730"
         },
         {
@@ -26729,11 +26041,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/executor/manager.py:2739",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@func_retry"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/executor/manager.py#L2737"
         },
         {
@@ -26747,11 +26055,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/executor/manager.py:2827",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@asynccontextmanager"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/executor/manager.py#L2825"
         },
         {
@@ -28032,9 +27336,9 @@
           "action_location": "autogpt_platform/backend/backend/integrations/creds_manager.py:695",
           "governed": false,
           "checkpoint": {
-            "type": "decorator",
+            "type": "caller_guard",
             "strength": 0.6,
-            "evidence": "@asynccontextmanager"
+            "evidence": "if not refreshed:"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/integrations/creds_manager.py#L693"
         },
@@ -28351,11 +27655,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/notifications/lifecycle.py:348",
           "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "the account deletion, ends without a word: it sends its own confirmation.\"\"\""
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/notifications/lifecycle.py#L343"
         },
         {
@@ -28635,104 +27935,6 @@
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/sdk/builder.py#L116"
         },
         {
-          "location": "autogpt_platform/backend/backend/sdk/provider.py:78",
-          "file": "autogpt_platform/backend/backend/sdk/provider.py",
-          "line": 78,
-          "kind": "function_call",
-          "name": "description = kwargs.pop(\"description\", f\"{self.name.title()} credentials\")",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/sdk/provider.py:79",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/sdk/provider.py#L78"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/sdk/provider.py:79",
-          "file": "autogpt_platform/backend/backend/sdk/provider.py",
-          "line": 79,
-          "kind": "function_call",
-          "name": "required_scopes = kwargs.pop(\"required_scopes\", set())",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/sdk/provider.py:80",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/sdk/provider.py#L79"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/sdk/provider.py:80",
-          "file": "autogpt_platform/backend/backend/sdk/provider.py",
-          "line": 80,
-          "kind": "function_call",
-          "name": "discriminator = kwargs.pop(\"discriminator\", None)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/sdk/provider.py:81",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/sdk/provider.py#L80"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/sdk/provider.py:81",
-          "file": "autogpt_platform/backend/backend/sdk/provider.py",
-          "line": 81,
-          "kind": "function_call",
-          "name": "discriminator_mapping = kwargs.pop(\"discriminator_mapping\", None)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/sdk/provider.py:82",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/sdk/provider.py#L81"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/sdk/provider.py:82",
-          "file": "autogpt_platform/backend/backend/sdk/provider.py",
-          "line": 82,
-          "kind": "function_call",
-          "name": "discriminator_values = kwargs.pop(\"discriminator_values\", None)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/sdk/provider.py:83",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/sdk/provider.py#L82"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/sdk/provider.py:89",
-          "file": "autogpt_platform/backend/backend/sdk/provider.py",
-          "line": 89,
-          "kind": "ternary",
-          "name": "json_schema_extra.update(kwargs.pop(\"json_schema_extra\"))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/sdk/provider.py:95",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/sdk/provider.py#L89"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/sdk/provider.py:94",
-          "file": "autogpt_platform/backend/backend/sdk/provider.py",
-          "line": 94,
-          "kind": "conditional_branch",
-          "name": "json_schema_extra.update(kwargs.pop(\"json_schema_extra\"))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/sdk/provider.py:95",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/sdk/provider.py#L94"
-        },
-        {
           "location": "autogpt_platform/backend/backend/sdk/registry.py:90",
           "file": "autogpt_platform/backend/backend/sdk/registry.py",
           "line": 90,
@@ -28868,9 +28070,9 @@
           "action_location": "autogpt_platform/backend/backend/util/e2b_network.py:609",
           "governed": false,
           "checkpoint": {
-            "type": "decorator",
+            "type": "caller_guard",
             "strength": 0.6,
-            "evidence": "@contextlib.asynccontextmanager"
+            "evidence": "if address is None or not apply_network:"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/e2b_network.py#L600"
         },
@@ -28886,9 +28088,9 @@
           "action_location": "autogpt_platform/backend/backend/util/e2b_network.py:609",
           "governed": false,
           "checkpoint": {
-            "type": "decorator",
+            "type": "caller_guard",
             "strength": 0.6,
-            "evidence": "@contextlib.asynccontextmanager"
+            "evidence": "if address is None or not apply_network:"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/e2b_network.py#L601"
         },
@@ -28963,11 +28165,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/util/file.py:134",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@contextmanager"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/file.py#L133"
         },
         {
@@ -29009,11 +28207,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/util/llm/saturation.py:64",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@contextlib.contextmanager"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/llm/saturation.py#L54"
         },
         {
@@ -29075,114 +28269,6 @@
             "evidence": "response_model: type[BaseModel],"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/llm/tool_use.py#L55"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/util/metrics.py:163",
-          "file": "autogpt_platform/backend/backend/util/metrics.py",
-          "line": 163,
-          "kind": "conditional_branch",
-          "name": "queue.append((value, nested_key))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/util/metrics.py:171",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if \"breadcrumbs\" in event:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/metrics.py#L163"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/util/metrics.py:165",
-          "file": "autogpt_platform/backend/backend/util/metrics.py",
-          "line": 165,
-          "kind": "conditional_branch",
-          "name": "queue.append((value, nested_key))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/util/metrics.py:171",
-          "governed": false,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.6,
-            "evidence": "if isinstance(value, dict):"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/metrics.py#L165"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/util/metrics.py:171",
-          "file": "autogpt_platform/backend/backend/util/metrics.py",
-          "line": 171,
-          "kind": "function_call",
-          "name": "queue.extend((value, index) for index in indices)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/util/metrics.py:176",
-          "governed": false,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.6,
-            "evidence": "if ("
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/metrics.py#L171"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/util/metrics.py:172",
-          "file": "autogpt_platform/backend/backend/util/metrics.py",
-          "line": 172,
-          "kind": "conditional_branch",
-          "name": "queue.extend((value, index) for index in indices)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/util/metrics.py:176",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if \"breadcrumbs\" in event:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/metrics.py#L172"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/util/metrics.py:174",
-          "file": "autogpt_platform/backend/backend/util/metrics.py",
-          "line": 174,
-          "kind": "conditional_branch",
-          "name": "queue.extend((value, index) for index in indices)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/util/metrics.py:176",
-          "governed": false,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.6,
-            "evidence": "elif isinstance(value, list):"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/metrics.py#L174"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/util/posthog_client.py:69",
-          "file": "autogpt_platform/backend/backend/util/posthog_client.py",
-          "line": 69,
-          "kind": "conditional_branch",
-          "name": "**(options.pop(\"super_properties\", None) or {}),",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/util/posthog_client.py:72",
-          "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if _initialized:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/posthog_client.py#L69"
         },
         {
           "location": "autogpt_platform/backend/backend/util/process.py:83",
@@ -29385,11 +28471,7 @@
           ],
           "action_location": "autogpt_platform/backend/backend/util/sandbox_limits.py:150",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@contextlib.asynccontextmanager"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/sandbox_limits.py#L144"
         },
         {
@@ -29441,38 +28523,6 @@
           "governed": false,
           "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/sandbox_limits.py#L223"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/util/service.py:990",
-          "file": "autogpt_platform/backend/backend/util/service.py",
-          "line": 990,
-          "kind": "conditional_branch",
-          "name": "kwargs.update(dict(zip(arg_names, args)))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/util/service.py:994",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/service.py#L990"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/util/service.py:992",
-          "file": "autogpt_platform/backend/backend/util/service.py",
-          "line": 992,
-          "kind": "conditional_branch",
-          "name": "kwargs.update(dict(zip(arg_names, args)))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/util/service.py:994",
-          "governed": false,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.6,
-            "evidence": "if args:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/service.py#L992"
         },
         {
           "location": "autogpt_platform/backend/backend/util/settings.py:1701",
@@ -29852,9 +28902,9 @@
           "action_location": "autogpt_platform/backend/scripts/env_sync.py:52",
           "governed": false,
           "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if __name__ == \"__main__\":"
+            "type": "legacy_keyword",
+            "strength": 0.4,
+            "evidence": "check_target(args.target)"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/scripts/env_sync.py#L47"
         },
@@ -33499,34 +32549,6 @@
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/swap_proxy/swap_proxy/swap.py#L338"
         },
         {
-          "location": "autogpt_platform/swap_proxy/swap_proxy/swap.py:385",
-          "file": "autogpt_platform/swap_proxy/swap_proxy/swap.py",
-          "line": 385,
-          "kind": "loop",
-          "name": "new_segments.append(urllib.parse.quote(swapped, safe=\"\"))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/swap_proxy/swap_proxy/swap.py:390",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/swap_proxy/swap_proxy/swap.py#L385"
-        },
-        {
-          "location": "autogpt_platform/swap_proxy/swap_proxy/swap.py:388",
-          "file": "autogpt_platform/swap_proxy/swap_proxy/swap.py",
-          "line": 388,
-          "kind": "conditional_branch",
-          "name": "new_segments.append(urllib.parse.quote(swapped, safe=\"\"))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/swap_proxy/swap_proxy/swap.py:390",
-          "governed": false,
-          "checkpoint": null,
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/swap_proxy/swap_proxy/swap.py#L388"
-        },
-        {
           "location": "classic/direct_benchmark/analyze_failures.py:338",
           "file": "classic/direct_benchmark/analyze_failures.py",
           "line": 338,
@@ -34993,6 +34015,24 @@
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/forge/forge/components/data_processor/data_processor.py#L453"
         },
         {
+          "location": "classic/forge/forge/components/data_processor/data_processor.py:456",
+          "file": "classic/forge/forge/components/data_processor/data_processor.py",
+          "line": 456,
+          "kind": "loop",
+          "name": "groups[key].append(value)",
+          "consequence_types": [
+            "state_mutation"
+          ],
+          "action_location": "classic/forge/forge/components/data_processor/data_processor.py:462",
+          "governed": false,
+          "checkpoint": {
+            "type": "caller_guard",
+            "strength": 0.6,
+            "evidence": "if group_by:"
+          },
+          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/forge/forge/components/data_processor/data_processor.py#L456"
+        },
+        {
           "location": "classic/forge/forge/components/data_processor/data_processor.py:457",
           "file": "classic/forge/forge/components/data_processor/data_processor.py",
           "line": 457,
@@ -35006,7 +34046,7 @@
           "checkpoint": {
             "type": "caller_guard",
             "strength": 0.6,
-            "evidence": "if not data:"
+            "evidence": "if group_by:"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/forge/forge/components/data_processor/data_processor.py#L457"
         },
@@ -35409,11 +34449,7 @@
           ],
           "action_location": "classic/forge/forge/models/config.py:60",
           "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "**kwargs: Additional arguments passed to Pydantic Field()"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/forge/forge/models/config.py#L59"
         },
         {
@@ -35819,11 +34855,7 @@
           ],
           "action_location": "classic/original_autogpt/autogpt/app/main.py:182",
           "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "\"\"\"Display auto-approved command execution using Rich."
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/autogpt/app/main.py#L180"
         },
         {
@@ -35837,11 +34869,7 @@
           ],
           "action_location": "classic/original_autogpt/autogpt/app/main.py:183",
           "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "\"\"\"Display auto-approved command execution using Rich."
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/autogpt/app/main.py#L182"
         },
         {
@@ -35855,11 +34883,7 @@
           ],
           "action_location": "classic/original_autogpt/autogpt/app/main.py:184",
           "governed": false,
-          "checkpoint": {
-            "type": "legacy_keyword",
-            "strength": 0.4,
-            "evidence": "\"\"\"Display auto-approved command execution using Rich."
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/autogpt/app/main.py#L183"
         },
         {
@@ -35876,7 +34900,7 @@
           "checkpoint": {
             "type": "legacy_keyword",
             "strength": 0.4,
-            "evidence": "\"\"\"Display auto-approved command execution using Rich."
+            "evidence": "text.append(\"Auto-approved \", style=\"dim\")"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/autogpt/app/main.py#L184"
         },
@@ -35894,7 +34918,7 @@
           "checkpoint": {
             "type": "legacy_keyword",
             "strength": 0.4,
-            "evidence": "\"\"\"Display auto-approved command execution using Rich."
+            "evidence": "text.append(\"Auto-approved \", style=\"dim\")"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/autogpt/app/main.py#L185"
         },
@@ -35912,7 +34936,7 @@
           "checkpoint": {
             "type": "legacy_keyword",
             "strength": 0.4,
-            "evidence": "\"\"\"Display auto-approved command execution using Rich."
+            "evidence": "text.append(\"Auto-approved \", style=\"dim\")"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/autogpt/app/main.py#L186"
         },
@@ -35930,7 +34954,7 @@
           "checkpoint": {
             "type": "legacy_keyword",
             "strength": 0.4,
-            "evidence": "\"\"\"Display auto-approved command execution using Rich."
+            "evidence": "text.append(\"Auto-approved \", style=\"dim\")"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/autogpt/app/main.py#L187"
         },
@@ -35948,7 +34972,7 @@
           "checkpoint": {
             "type": "legacy_keyword",
             "strength": 0.4,
-            "evidence": "\"\"\"Display auto-approved command execution using Rich."
+            "evidence": "text.append(\"Auto-approved \", style=\"dim\")"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/autogpt/app/main.py#L189"
         },
@@ -35966,7 +34990,7 @@
           "checkpoint": {
             "type": "legacy_keyword",
             "strength": 0.4,
-            "evidence": "\"\"\"Display auto-approved command execution using Rich."
+            "evidence": "text.append(\"Auto-approved \", style=\"dim\")"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/autogpt/app/main.py#L190"
         },
@@ -35981,11 +35005,7 @@
           ],
           "action_location": "classic/original_autogpt/autogpt/app/settings/env_file.py:33",
           "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if TYPE_CHECKING:"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/autogpt/app/settings/env_file.py#L30"
         },
         {
@@ -37176,7 +36196,7 @@
           "checkpoint": {
             "type": "caller_guard",
             "strength": 0.6,
-            "evidence": "if __name__ == \"__main__\":"
+            "evidence": "if total_size != -1:"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/scripts/llamafile/serve.py#L114"
         },
@@ -37194,7 +36214,7 @@
           "checkpoint": {
             "type": "caller_guard",
             "strength": 0.6,
-            "evidence": "if __name__ == \"__main__\":"
+            "evidence": "if total_size != -1:"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/scripts/llamafile/serve.py#L118"
         },
@@ -37212,7 +36232,7 @@
           "checkpoint": {
             "type": "caller_guard",
             "strength": 0.6,
-            "evidence": "if __name__ == \"__main__\":"
+            "evidence": "if total_size != -1:"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/scripts/llamafile/serve.py#L123"
         },
@@ -37230,7 +36250,7 @@
           "checkpoint": {
             "type": "caller_guard",
             "strength": 0.6,
-            "evidence": "if __name__ == \"__main__\":"
+            "evidence": "if total_size != -1:"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/scripts/llamafile/serve.py#L130"
         },
@@ -39125,6 +38145,24 @@
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/blocks/exa/websets_import_export.py#L663"
         },
         {
+          "location": "autogpt_platform/backend/backend/blocks/github/commits.py:369",
+          "file": "autogpt_platform/backend/backend/blocks/github/commits.py",
+          "line": 369,
+          "kind": "conditional_branch",
+          "name": "tree_entries.append(",
+          "consequence_types": [
+            "state_mutation"
+          ],
+          "action_location": "autogpt_platform/backend/backend/blocks/github/commits.py:378",
+          "governed": true,
+          "checkpoint": {
+            "type": "caller_guard",
+            "strength": 0.8,
+            "evidence": "if parsed is not None:"
+          },
+          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/blocks/github/commits.py#L369"
+        },
+        {
           "location": "autogpt_platform/backend/backend/blocks/google/gmail.py:1234",
           "file": "autogpt_platform/backend/backend/blocks/google/gmail.py",
           "line": 1234,
@@ -40185,60 +39223,6 @@
             "evidence": "if tag not in named:"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/capabilities/index.py#L465"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/capabilities/sources/blocks.py:65",
-          "file": "autogpt_platform/backend/backend/copilot/capabilities/sources/blocks.py",
-          "line": 65,
-          "kind": "function_call",
-          "name": "tags.append(\"primitive\")",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/capabilities/sources/blocks.py:67",
-          "governed": true,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.8,
-            "evidence": "if provider:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/capabilities/sources/blocks.py#L65"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py:51",
-          "file": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py",
-          "line": 51,
-          "kind": "function_call",
-          "name": "tags.append(host)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py:53",
-          "governed": true,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.8,
-            "evidence": "if brand:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py#L51"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py:53",
-          "file": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py",
-          "line": 53,
-          "kind": "function_call",
-          "name": "tags.append(preset.display_name.strip().lower())",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py:55",
-          "governed": true,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.8,
-            "evidence": "if host:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/capabilities/sources/mcp_catalog.py#L53"
         },
         {
           "location": "autogpt_platform/backend/backend/copilot/db.py:728",
@@ -42059,6 +41043,24 @@
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/agent_generator/fixer.py#L282"
         },
         {
+          "location": "autogpt_platform/backend/backend/copilot/tools/agent_search.py:287",
+          "file": "autogpt_platform/backend/backend/copilot/tools/agent_search.py",
+          "line": 287,
+          "kind": "conditional_branch",
+          "name": "asyncio.gather(*[_fetch(a) for a in fetchable]),",
+          "consequence_types": [
+            "external_api_call"
+          ],
+          "action_location": "autogpt_platform/backend/backend/copilot/tools/agent_search.py:295",
+          "governed": true,
+          "checkpoint": {
+            "type": "caller_guard",
+            "strength": 0.8,
+            "evidence": "if graph is None:"
+          },
+          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/agent_search.py#L287"
+        },
+        {
           "location": "autogpt_platform/backend/backend/copilot/tools/base.py:230",
           "file": "autogpt_platform/backend/backend/copilot/tools/base.py",
           "line": 230,
@@ -42111,24 +41113,6 @@
             "evidence": "if isinstance(node, (dict, list)):"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/base.py#L232"
-        },
-        {
-          "location": "autogpt_platform/backend/backend/copilot/tools/base.py:293",
-          "file": "autogpt_platform/backend/backend/copilot/tools/base.py",
-          "line": 293,
-          "kind": "ternary",
-          "name": "queue.append((child, value))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/copilot/tools/base.py:300",
-          "governed": true,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.8,
-            "evidence": "if isinstance(value, (dict, list)):"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/copilot/tools/base.py#L293"
         },
         {
           "location": "autogpt_platform/backend/backend/copilot/tools/e2b_sandbox.py:1368",
@@ -44129,24 +43113,6 @@
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/cache.py#L291"
         },
         {
-          "location": "autogpt_platform/backend/backend/util/metrics.py:164",
-          "file": "autogpt_platform/backend/backend/util/metrics.py",
-          "line": 164,
-          "kind": "loop",
-          "name": "queue.append((value, nested_key))",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/backend/backend/util/metrics.py:171",
-          "governed": true,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.8,
-            "evidence": "if isinstance(value, dict):"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/backend/backend/util/metrics.py#L164"
-        },
-        {
           "location": "autogpt_platform/backend/backend/util/sandbox_limits.py:260",
           "file": "autogpt_platform/backend/backend/util/sandbox_limits.py",
           "line": 260,
@@ -44793,24 +43759,6 @@
             "evidence": "if decoded is None:"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/swap_proxy/swap_proxy/swap.py#L341"
-        },
-        {
-          "location": "autogpt_platform/swap_proxy/swap_proxy/swap.py:390",
-          "file": "autogpt_platform/swap_proxy/swap_proxy/swap.py",
-          "line": 390,
-          "kind": "function_call",
-          "name": "new_segments.append(segment)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "autogpt_platform/swap_proxy/swap_proxy/swap.py:392",
-          "governed": true,
-          "checkpoint": {
-            "type": "control_flow",
-            "strength": 0.8,
-            "evidence": "if swapped != decoded:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/autogpt_platform/swap_proxy/swap_proxy/swap.py#L390"
         },
         {
           "location": "classic/direct_benchmark/analyze_reports.py:100",
@@ -45699,11 +44647,11 @@
           "file": "classic/forge/forge/components/code_executor/code_executor.py",
           "line": 248,
           "kind": "conditional_branch",
-          "name": "exec_env.update(env_vars)",
+          "name": "result = subprocess.run(",
           "consequence_types": [
-            "state_mutation"
+            "system_command"
           ],
-          "action_location": "classic/forge/forge/components/code_executor/code_executor.py:249",
+          "action_location": "classic/forge/forge/components/code_executor/code_executor.py:258",
           "governed": true,
           "checkpoint": {
             "type": "control_flow",
@@ -45765,24 +44713,6 @@
             "evidence": "if not exec_dir.exists():"
           },
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/forge/forge/components/code_executor/code_executor.py#L369"
-        },
-        {
-          "location": "classic/forge/forge/components/data_processor/data_processor.py:456",
-          "file": "classic/forge/forge/components/data_processor/data_processor.py",
-          "line": 456,
-          "kind": "loop",
-          "name": "groups[key].append(value)",
-          "consequence_types": [
-            "state_mutation"
-          ],
-          "action_location": "classic/forge/forge/components/data_processor/data_processor.py:462",
-          "governed": true,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.8,
-            "evidence": "if not data:"
-          },
-          "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/forge/forge/components/data_processor/data_processor.py#L456"
         },
         {
           "location": "classic/forge/forge/components/image_gen/image_gen.py:138",
@@ -46595,8 +45525,8 @@
           "source_url": "https://github.com/Significant-Gravitas/AutoGPT/blob/HEAD/classic/original_autogpt/scripts/llamafile/serve.py#L133"
         }
       ],
-      "engine_version": "0.7.0",
-      "app_version": "0.4.0"
+      "engine_version": "0.7.1",
+      "app_version": "0.4.1"
     }
   },
   {
@@ -46606,7 +45536,7 @@
       "scan_id": "592d7779-b4eb-460a-852a-2c6267c48f59",
       "repo": "https://github.com/microsoft/TaskWeaver",
       "repo_name": "TaskWeaver",
-      "gamma": 0.19,
+      "gamma": 0.18,
       "gamma_status": "BELOW_THRESHOLD",
       "files_scanned": 143,
       "files_affected": 11,
@@ -46639,9 +45569,48 @@
         },
         {
           "file": "auto_eval/evaluator.py",
+          "line": 136,
+          "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/auto_eval/evaluator.py#L136",
+          "code": "response = self.llm_model.invoke(chat_history).content",
+          "drift_class": "MISSING_PRE_NODE",
+          "drift_class_name": "Pre-Node gap",
+          "severity": "critical",
+          "recommendation": "Define what must be checked before this AI call. What conditions must be met? What must the AI never return?",
+          "issue": "No checkpoint exists before the AI call at auto_eval/evaluator.py:136. The AI receives input and produces output with nothing checking whether it should — or what it can return.",
+          "provider": "langchain",
+          "confidence": "high"
+        },
+        {
+          "file": "auto_eval/evaluator.py",
+          "line": 136,
+          "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/auto_eval/evaluator.py#L136",
+          "code": "response = self.llm_model.invoke(chat_history).content",
+          "drift_class": "MISSING_HUMAN_GATE",
+          "drift_class_name": "Human-Authorised Transition missing",
+          "severity": "high",
+          "recommendation": "Define the severity and required authorisation level for this output.",
+          "issue": "AI output flows to 'user-facing response' with no human review detected.",
+          "provider": "langchain",
+          "confidence": "high"
+        },
+        {
+          "file": "auto_eval/evaluator.py",
           "line": 63,
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/auto_eval/evaluator.py#L63",
           "code": "model = ChatGoogleGenerativeAI(",
+          "drift_class": "MISSING_HUMAN_GATE",
+          "drift_class_name": "Human-Authorised Transition missing",
+          "severity": "high",
+          "recommendation": "Define the severity and required authorisation level for this output.",
+          "issue": "AI output flows to 'downstream processing' with no human review detected.",
+          "provider": "langchain",
+          "confidence": "high"
+        },
+        {
+          "file": "auto_eval/evaluator.py",
+          "line": 244,
+          "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/auto_eval/evaluator.py#L244",
+          "code": "response = self.llm_model.invoke(messages).content",
           "drift_class": "MISSING_HUMAN_GATE",
           "drift_class_name": "Human-Authorised Transition missing",
           "severity": "high",
@@ -46939,25 +45908,25 @@
       ],
       "drift_class_summary": {
         "DC-E13": 1,
-        "MISSING_HUMAN_GATE": 11,
-        "MISSING_PRE_NODE": 2,
+        "MISSING_HUMAN_GATE": 13,
+        "MISSING_PRE_NODE": 3,
         "UNGATED_IRREVERSIBLE_ACTION": 2,
         "INFORMAL_INVARIANT": 9
       },
       "severity_breakdown": {
-        "critical": 4,
-        "high": 12,
+        "critical": 5,
+        "high": 14,
         "medium": 9
       },
       "frameworks_detected": [
         "LangChain",
         "OpenAI"
       ],
-      "contract_size_kb": 2480,
-      "pre_nodes_count": 14,
+      "contract_size_kb": 2479.9,
+      "pre_nodes_count": 15,
       "stabilisation_operators_count": 5,
-      "scan_date": "2026-11-15T06:18:45.438228+00:00",
-      "scan_duration_ms": 4799,
+      "scan_date": "2026-11-15T08:02:31.022726+00:00",
+      "scan_duration_ms": 4739,
       "agent_actions": {
         "tools": {
           "governed": 0,
@@ -46965,11 +45934,11 @@
         },
         "model_calls": {
           "governed": 0,
-          "total": 16
+          "total": 18
         },
         "total": {
           "governed": 0,
-          "total": 16
+          "total": 18
         }
       },
       "human_authorisations": [],
@@ -47043,6 +46012,34 @@
           "governed": false,
           "checkpoint": null,
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/auto_eval/evaluator.py#L73"
+        },
+        {
+          "location": "auto_eval/evaluator.py:136",
+          "file": "auto_eval/evaluator.py",
+          "line": 136,
+          "kind": "model_call",
+          "name": "AI model call (langchain)",
+          "consequence_types": [
+            "model_call"
+          ],
+          "action_location": "auto_eval/evaluator.py:136",
+          "governed": false,
+          "checkpoint": null,
+          "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/auto_eval/evaluator.py#L136"
+        },
+        {
+          "location": "auto_eval/evaluator.py:244",
+          "file": "auto_eval/evaluator.py",
+          "line": 244,
+          "kind": "model_call",
+          "name": "AI model call (langchain)",
+          "consequence_types": [
+            "model_call"
+          ],
+          "action_location": "auto_eval/evaluator.py:244",
+          "governed": false,
+          "checkpoint": null,
+          "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/auto_eval/evaluator.py#L244"
         },
         {
           "location": "project/plugins/paper_summary.py:25",
@@ -47293,11 +46290,7 @@
           ],
           "action_location": "auto_eval/ds1000_scripts/prepare_cases.py:130",
           "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if __name__ == \"__main__\":"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/auto_eval/ds1000_scripts/prepare_cases.py#L120"
         },
         {
@@ -47328,7 +46321,7 @@
           "checkpoint": {
             "type": "control_flow",
             "strength": 0.6,
-            "evidence": "if __name__ == \"__main__\":"
+            "evidence": "if pkg == \"sklearn\":"
           },
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/auto_eval/ds1000_scripts/prepare_cases.py#L130"
         },
@@ -47343,11 +46336,7 @@
           ],
           "action_location": "auto_eval/ds1000_scripts/prepare_cases.py:147",
           "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if __name__ == \"__main__\":"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/auto_eval/ds1000_scripts/prepare_cases.py#L141"
         },
         {
@@ -47361,11 +46350,7 @@
           ],
           "action_location": "auto_eval/ds1000_scripts/prepare_cases.py:153",
           "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if __name__ == \"__main__\":"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/auto_eval/ds1000_scripts/prepare_cases.py#L151"
         },
         {
@@ -47379,11 +46364,7 @@
           ],
           "action_location": "auto_eval/ds1000_scripts/prepare_cases.py:158",
           "governed": false,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if __name__ == \"__main__\":"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/auto_eval/ds1000_scripts/prepare_cases.py#L153"
         },
         {
@@ -47538,9 +46519,9 @@
           "action_location": "auto_eval/utils.py:23",
           "governed": false,
           "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.6,
-            "evidence": "if sys.version_info >= (3, 8):"
+            "type": "legacy_keyword",
+            "strength": 0.4,
+            "evidence": "assert os.path.isdir(eval_case_dir), f\"Invalid eval case dir: {eval_case_dir}\""
           },
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/auto_eval/utils.py#L18"
         },
@@ -47863,11 +46844,7 @@
           ],
           "action_location": "taskweaver/ces/kernel/ctx_magic.py:69",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@cell_magic"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/taskweaver/ces/kernel/ctx_magic.py#L66"
         },
         {
@@ -49111,6 +48088,24 @@
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/taskweaver/llm/openai.py#L336"
         },
         {
+          "location": "taskweaver/llm/openai.py:343",
+          "file": "taskweaver/llm/openai.py",
+          "line": 343,
+          "kind": "conditional_branch",
+          "name": "with open(token_cache_file, \"w\") as cache_file:",
+          "consequence_types": [
+            "file_write"
+          ],
+          "action_location": "taskweaver/llm/openai.py:344",
+          "governed": false,
+          "checkpoint": {
+            "type": "caller_guard",
+            "strength": 0.6,
+            "evidence": "if result is not None and \"access_token\" in result:"
+          },
+          "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/taskweaver/llm/openai.py#L343"
+        },
+        {
           "location": "taskweaver/logging/__init__.py:75",
           "file": "taskweaver/logging/__init__.py",
           "line": 75,
@@ -49157,11 +48152,7 @@
           ],
           "action_location": "taskweaver/logging/__init__.py:112",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@provider"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/taskweaver/logging/__init__.py#L109"
         },
         {
@@ -49253,11 +48244,7 @@
           ],
           "action_location": "taskweaver/plugin/context.py:213",
           "governed": false,
-          "checkpoint": {
-            "type": "decorator",
-            "strength": 0.6,
-            "evidence": "@contextlib.contextmanager"
-          },
+          "checkpoint": null,
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/taskweaver/plugin/context.py#L204"
         },
         {
@@ -49272,9 +48259,9 @@
           "action_location": "taskweaver/session/session.py:327",
           "governed": false,
           "checkpoint": {
-            "type": "decorator",
+            "type": "caller_guard",
             "strength": 0.6,
-            "evidence": "@tracing_decorator"
+            "evidence": "if files is not None:"
           },
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/taskweaver/session/session.py#L323"
         },
@@ -50815,24 +49802,6 @@
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/taskweaver/llm/openai.py#L338"
         },
         {
-          "location": "taskweaver/llm/openai.py:343",
-          "file": "taskweaver/llm/openai.py",
-          "line": 343,
-          "kind": "conditional_branch",
-          "name": "with open(token_cache_file, \"w\") as cache_file:",
-          "consequence_types": [
-            "file_write"
-          ],
-          "action_location": "taskweaver/llm/openai.py:344",
-          "governed": true,
-          "checkpoint": {
-            "type": "caller_guard",
-            "strength": 0.8,
-            "evidence": "if config.aad_use_token_cache:"
-          },
-          "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/taskweaver/llm/openai.py#L343"
-        },
-        {
           "location": "taskweaver/logging/__init__.py:67",
           "file": "taskweaver/logging/__init__.py",
           "line": 67,
@@ -51013,8 +49982,8 @@
           "source_url": "https://github.com/microsoft/TaskWeaver/blob/HEAD/taskweaver/utils/json_parser.py#L374"
         }
       ],
-      "engine_version": "0.7.0",
-      "app_version": "0.4.0"
+      "engine_version": "0.7.1",
+      "app_version": "0.4.1"
     }
   }
 ]

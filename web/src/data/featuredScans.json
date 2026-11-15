@@ -5,11 +5,11 @@
     "result": {
       "scan_id": "e6aeda21-5825-4dde-a6e3-c027ee13f1b8",
       "repo_name": "TradingAgents",
-      "gamma": 0.13,
+      "gamma": 0.05,
       "files_scanned": 94,
       "severity_breakdown": {
-        "critical": 4,
-        "high": 1,
+        "critical": 5,
+        "high": 2,
         "medium": 16
       },
       "agent_actions": {
@@ -19,14 +19,14 @@
         },
         "model_calls": {
           "governed": 0,
-          "total": 0
+          "total": 11
         },
         "total": {
           "governed": 0,
-          "total": 12
+          "total": 23
         }
       },
-      "engine_version": "0.7.0"
+      "engine_version": "0.7.1"
     }
   },
   {
@@ -38,7 +38,7 @@
       "gamma": 0.22,
       "files_scanned": 4981,
       "severity_breakdown": {
-        "critical": 135,
+        "critical": 143,
         "high": 48,
         "medium": 303
       },
@@ -56,7 +56,7 @@
           "total": 59
         }
       },
-      "engine_version": "0.7.0"
+      "engine_version": "0.7.1"
     }
   },
   {
@@ -65,11 +65,11 @@
     "result": {
       "scan_id": "592d7779-b4eb-460a-852a-2c6267c48f59",
       "repo_name": "TaskWeaver",
-      "gamma": 0.19,
+      "gamma": 0.18,
       "files_scanned": 143,
       "severity_breakdown": {
-        "critical": 4,
-        "high": 12,
+        "critical": 5,
+        "high": 14,
         "medium": 9
       },
       "agent_actions": {
@@ -79,14 +79,14 @@
         },
         "model_calls": {
           "governed": 0,
-          "total": 16
+          "total": 18
         },
         "total": {
           "governed": 0,
-          "total": 16
+          "total": 18
         }
       },
-      "engine_version": "0.7.0"
+      "engine_version": "0.7.1"
     }
   }
 ]
