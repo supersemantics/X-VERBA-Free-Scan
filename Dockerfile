@@ -14,7 +14,7 @@ RUN npm ci --prefix web
 
 # Pinned, so a new engine release never changes live results by itself.
 # To upgrade: bump this, test locally, and note it in CHANGELOG.md.
-ARG XVERBA_VERSION=0.7.0
+ARG XVERBA_VERSION=0.7.1
 RUN python3 -m venv /opt/xverba \
     && /opt/xverba/bin/pip install --no-cache-dir "x-verba==${XVERBA_VERSION}"
 

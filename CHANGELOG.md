@@ -2,6 +2,22 @@
 
 All notable changes to X-VERBA Free Scan. Versions follow [semantic versioning](https://semver.org/); the API and web packages share one version.
 
+## 0.4.1: x-verba 0.7.1
+
+**Engine:** x-verba 0.7.1 (pinned in the Dockerfile; was 0.7.0).
+
+0.7.1 fixes scoring noise found on these same repos. Decorators like `@tool` are no longer read as checkpoints. Comments and docstrings no longer count as evidence. Adding to a function's own working list is no longer consequential. Model calls through an `llm` object (`llm.invoke`, `(prompt | llm).invoke`) are now counted. Caller guards no longer match a function's own `def` line or another object's method of the same name. See the engine's CHANGELOG for details.
+
+Featured scans refreshed with 0.7.1 (scan IDs kept):
+
+| Repo | 0.7.0 | 0.7.1 |
+|---|---|---|
+| TradingAgents | Γ 0.13 (11/83), 0/12 agent actions, 21 fixes | Γ 0.05 (4/77), 0/23 agent actions (11 model calls now found), 23 fixes |
+| TaskWeaver | Γ 0.19 (45/237), 0/16, 25 fixes | Γ 0.18 (44/239), 0/18, 28 fixes |
+| AutoGPT | Γ 0.22 (517/2368), 0/59, 486 fixes | Γ 0.22 (512/2313), 0/59, 494 fixes |
+
+Checked against the Docker image: `/api/health` reports engine 0.7.1, and the TradingAgents report lists its model calls first in "Not governed", with every card agreeing with the verdict.
+
 ## 0.4.0: one consistent verdict, featured scans on x-verba 0.7.0
 
 ### The report no longer contradicts itself
