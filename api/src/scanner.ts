@@ -13,14 +13,17 @@ const execFileAsync = promisify(execFile);
 
 // Never let git wait for credentials: a private or missing repo must fail
 // fast with "not found", not hang or pop up a credential manager.
-const GIT_ENV = {
-  ...process.env,
-  GIT_TERMINAL_PROMPT: '0',
-  GCM_INTERACTIVE: 'never',
-  GIT_ASKPASS: '',
-  SSH_ASKPASS: '',
-};
-const GIT_NO_CREDENTIALS = ['-c', 'credential.helper=', '-c', 'core.askPass='];
+//
+// Running Free Scan on your own machine, you can let git use the GitHub login
+// it already has stored (e.g. Git Credential Manager), so private repos you
+// can access scan too: set GIT_USE_LOCAL_CREDENTIALS=1. Leave it off on any
+// shared or public deployment. git still never prompts either way.
+export const USE_LOCAL_CREDENTIALS = process.env.GIT_USE_LOCAL_CREDENTIALS === '1';
+
+const GIT_ENV = USE_LOCAL_CREDENTIALS
+  ? { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never' }
+  : { ...process.env, GIT_TERMINAL_PROMPT: '0', GCM_INTERACTIVE: 'never', GIT_ASKPASS: '', SSH_ASKPASS: '' };
+const GIT_NO_CREDENTIALS = USE_LOCAL_CREDENTIALS ? [] : ['-c', 'credential.helper=', '-c', 'core.askPass='];
 
 function git(args: string[], timeout: number) {
   return execFileAsync('git', [...GIT_NO_CREDENTIALS, ...args], {

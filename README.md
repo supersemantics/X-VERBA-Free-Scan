@@ -41,7 +41,7 @@ Paste a GitHub link in any of the shapes GitHub gives you:
 | `…/tree/<branch>/<folder>` | just that folder, with links pointing into it |
 | `…/blob/<branch>/<file>` | the file's branch |
 
-Free Scan reads public repositories only. A private or missing repository, an unknown branch or a missing folder each gets a plain message instead of raw `git` output. With x-verba 0.7.0 or later, the report also shows how many of the agent's actions (tools it can call, model calls) are governed, and any VSL gates recognised. Every report and contract records the x-verba version that produced it.
+Free Scan reads public repositories only, unless you run it on your own machine with `GIT_USE_LOCAL_CREDENTIALS=1`: git can then use the GitHub login it already has stored, so private repos you can access scan too. Never set it on a shared or public deployment. A private or missing repository, an unknown branch or a missing folder each gets a plain message instead of raw `git` output. With x-verba 0.7.0 or later, the report also shows how many of the agent's actions (tools it can call, model calls) are governed, and any VSL gates recognised. Every report and contract records the x-verba version that produced it.
 
 Run the API's tests with `npm test` in `api/`.
 
@@ -80,6 +80,7 @@ Settings for a public deployment (all optional):
 | `MAX_STORED_SCANS` | 500 | results kept in memory for shareable `/results/<id>` links; the oldest go first, and all are cleared on redeploy |
 | `TRUST_PROXY` | 1 | proxy hops in front of the app, so each visitor's IP is read correctly |
 | `X_VERBA_BIN` | `x-verba` | path to the engine |
+| `GIT_USE_LOCAL_CREDENTIALS` | off | local use only: `1` lets git use this machine's stored GitHub login, for private repos. Never on a public deployment |
 
 Each visitor runs one scan at a time.
 
